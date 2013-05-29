@@ -11,20 +11,21 @@ public class ImageProcessing {
 	public boolean[][]m;
 	public boolean[][]m2;
 	public int[][]res;
+	//deve receber externa para criar a matriz boleana
 	public ImageProcessing(BufferedImage img) {
 		int height = img.getHeight();
 		int width = img.getWidth();
 
 		m=new boolean[height][width];
-		m2=new boolean[height][width];
+		//m2=new boolean[height][width];
 		for (int x = 0; x < width; x++) {
 			for (int y = 0; y < height; y++) {
 				int color = img.getRGB(x, y);
 				int r=(color & 0x00ff0000) >> 16;
 				int g=(color & 0x0000ff00) >> 8;
 				int b=(color & 0x000000ff);
-				m[y][x]=r<240 && g < 150;
-				m2[y][x]=r+g+b<600;
+				//m[y][x]=r<180 || b<200;
+				m[y][x]=!(r+g+b>700 || r>180);
 			}
 		}
 	}

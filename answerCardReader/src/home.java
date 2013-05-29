@@ -27,10 +27,13 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Vector;
 import java.util.Scanner;
 import javax.imageio.ImageIO;
+
 
 import com.google.zxing.*;
 import com.google.zxing.client.j2se.*;
@@ -43,53 +46,39 @@ public class home {
 	public static void main(String[] args) {
 		
 		long startTime = System.nanoTime();
-		
-		ImageProcessing clImg=null;
+		BufferedImage file=null;
 		try {
-			//BufferedImage file = ImageIO.read(new File(in.nextLine()));
-			//BufferedImage file = ImageIO.read(new File("d:/Desktop/uia/CCF14012013_0005.jpg"));
-			BufferedImage file = ImageIO.read(new File("d:/Desktop/indice.png"));
-			
-			//achar a regiao especifica do qr code
-			LuminanceSource source = new BufferedImageLuminanceSource(file);
-			BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
-			QRCodeReader reader=new QRCodeReader();
-			try{
-			Result result=reader.decode(bitmap);
-			System.out.println(result.getText());
-			}catch (Exception e) {
-				e.printStackTrace();
-			}
-			
-			
-			int width=file.getWidth();
-			int height=file.getHeight();
-			if(width>height){
-				height/=(float)width/1000;
-				width=1000;
-			}else{
-				width/=(float)height/1000;
-				height=1000;
-			}
-			BufferedImage resizedImage = new BufferedImage(width, height, 5);
-			Graphics2D g = resizedImage.createGraphics();
-			g.drawImage(file, 0, 0, width, height, null);
-			g.dispose();
-			
-			//ImageIO.write(resizedImage,"bmp",new File("d:/Desktop/tmp4.bmp"));
-			
-			clImg=new ImageProcessing(resizedImage);
-			//clImg.m=clImg.erode(clImg.m);
-			//clImg.m=clImg.erode(clImg.m);
-			//clImg.m=clImg.dilate(clImg.m);
-			//clImg.m=clImg.dilate(clImg.m);
+			file = ImageIO.read(new File(in.nextLine()));
+			//file = ImageIO.read(new File("d:/Desktop/uia/CCF14012013_0005.jpg"));
+			//file = ImageIO.read(new File("d:/Desktop/002.jpg"));
 		} catch (Exception e) {
-			System.out.println("catch");
 			e.printStackTrace();
 		}
 		
-		int[][]res=clImg.bwlabel(clImg.m);
-		List<Hashtable<String,Integer>> reg=clImg.regionProps(res);
+		String qr=lerQr(file);
+		
+		BufferedImage resizedImage=criarImagemRedimensionada(file);
+		
+		ImageProcessing clImg=new ImageProcessing(resizedImage);
+		//clImg.m=clImg.erode(clImg.m);
+		clImg.m=clImg.dilate(clImg.m);
+		//clImg.saveFilteredImage("d:/desktop/tmpSaida.png",clImg.m);
+		List<Hashtable<String,Integer>> reg=filterRegions(clImg);
+		//List<Hashtable<String,Integer>> reg2=clImg.regionProps(clImg.bwlabel(clImg.m2));
+		
+		
+		
+		
+		
+		float tempo=((float)System.nanoTime() - startTime)/1000000000;
+		System.out.println("<cartao tempo='"+tempo+"' qr='"+qr+"'>");
+		procurarLinhaClock(reg);
+		System.out.println("</cartao>");
+		
+	}
+	
+	public static List<Hashtable<String,Integer>> filterRegions(ImageProcessing clImg){
+		List<Hashtable<String,Integer>> reg=clImg.regionProps(clImg.bwlabel(clImg.m));
 		for (int i=0;i<reg.size();i++) {
 			int width=reg.get(i).get("maxx")-reg.get(i).get("minx");
 			int height=reg.get(i).get("maxy")-reg.get(i).get("miny");
@@ -99,75 +88,44 @@ public class home {
 				i--;
 			}
 		}
-		//System.out.println(reg.size());
-		
-		
-		res=clImg.bwlabel(clImg.m2);
-		List<Hashtable<String,Integer>> reg2=clImg.regionProps(res);
-		
-		//clImg.saveFilteredImage("d:/desktop/tmpSaida.png",clImg.m);
-		
-		
-		procurarLinhaClock(reg);
-		float tempo=((float)System.nanoTime() - startTime)/1000000000;
-		System.out.println("<cartao tempo='"+tempo+"'>");
-		lerCartao(reg,reg2);
-		System.out.println("</cartao>");
-		
+		return reg;
 	}
-	public static void lerCartao(List<Hashtable<String,Integer>> reg,List<Hashtable<String,Integer>> regSuja){
-		Hashtable<String,Integer> ini=reg.get(0);
-		Hashtable<String,Integer> fim=null;
-		int lastClock=0;
-		int largura=0;
-		
-		while(reg.get(lastClock).containsKey("clock"))lastClock++;
-		fim=reg.get(lastClock-1);
-		double a90=-(double)(fim.get("centrox")-ini.get("centrox"))/(double)(fim.get("centroy")-ini.get("centroy"));
-		
-		int maxd=0;
-		int biggest=0;
-		for(int j=0;j<lastClock;j++){
-			Hashtable<String,Integer> clock=reg.get(j);
-			double b=clock.get("centroy")-a90*clock.get("centrox");
-			
-			for(int i=0;i<regSuja.size();i++){
-				int yAt=regSuja.get(i).get("centroy");
-				int xAt=regSuja.get(i).get("centrox");
-				int ypos=(int)(xAt*a90+b);
-				if(yAt<ypos+20 && yAt>ypos-20){
-					int yd=regSuja.get(i).get("centroy")-clock.get("centroy");
-					int xd=regSuja.get(i).get("centrox")-clock.get("centrox");
-					int d=(int)Math.sqrt((xd)*(xd)+(yd)*(yd));
-					if(maxd<d)maxd=d;
-				}
-				if(maxd>biggest)biggest=maxd;
-			}
-			largura+=maxd;
+	public static BufferedImage criarImagemRedimensionada(BufferedImage file){
+		int width=file.getWidth();
+		int height=file.getHeight();
+		if(width<=1000 && height<=1000)return file;
+		if(width>height){
+			height/=(float)width/1000;
+			width=1000;
+		}else{
+			width/=(float)height/1000;
+			height=1000;
 		}
-		largura/=(lastClock);
-		
-		
-		for(int j=0;j<lastClock;j++){
-			Hashtable<String,Integer> clock=reg.get(j);
-			double b=clock.get("centroy")-a90*clock.get("centrox");
-			System.out.println("<clock ordinal='"+(j+1)+"'>");
-			
-			//System.out.println(j+")"+clock.get("ID")+" "+clock.get("area")+" "+clock.get("centrox")+":"+clock.get("centroy"));
-			for(int i=lastClock;i<reg.size();i++){
-				int yAt=reg.get(i).get("centroy");
-				int xAt=reg.get(i).get("centrox");
-				int ypos=(int)(xAt*a90+b);
-				if(yAt<ypos+10 && yAt>ypos-10){
-					int yd=reg.get(i).get("centroy")-clock.get("centroy");
-					int xd=reg.get(i).get("centrox")-clock.get("centrox");
-					int d=(int)Math.sqrt((xd)*(xd)+(yd)*(yd));
-					int pos=(int)Math.round(d/(double)(largura/12));
-					System.out.println("<marca pos='"+pos+"'></marca>");
-				}
-			}
-			System.out.println("</clock>");
+		BufferedImage resizedImage = new BufferedImage(width, height, 5);
+		Graphics2D g = resizedImage.createGraphics();
+		g.drawImage(file, 0, 0, width, height, null);
+		g.dispose();
+		/*
+		try {
+			ImageIO.write(resizedImage, "jpg", new File("d:/Desktop/tmp.jpg"));
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
+		*/
+		return resizedImage;
+	}
+	public static String lerQr(BufferedImage file){
+		//achar a regiao especifica do qr code
+		String result="";
+		LuminanceSource source = new BufferedImageLuminanceSource(file);
+		BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
+		QRCodeReader reader=new QRCodeReader();
+		try{
+			result=reader.decode(bitmap).getText();
+		}catch (Exception e) {
+			result=e.getMessage();
+		}
+		return result;
 	}
 	public static int fx(int x,double a,double b){
 		return (int)(x*a+b);
@@ -177,84 +135,114 @@ public class home {
 	//principal cagada: usa 2 pontos mto proximos para traçar uma reta
 	public static boolean procurarLinhaClock(List<Hashtable<String,Integer>> reg){
 		//remove the 0s region
-		reg.remove(0);
-		//get left most region
-		Hashtable<String,Integer> lmostP=reg.get(0);
-		for(int i=0;i<reg.size();i++){
-			if(reg.get(i).get("centrox")<lmostP.get("centrox")){
-				lmostP=reg.get(i);
+		Collections.sort(reg,new Sorter("area",-1));
+		List<Hashtable<String,Integer>> list2point=new Vector<Hashtable<String,Integer>>();
+		Hashtable<String,Integer> ponto1,ponto2,ponto3=null;
+		while(true){
+			reg.remove(0);
+			
+			int a1=reg.get(0).get("area");
+			int a2=reg.get(1).get("area");
+			int a3=reg.get(2).get("area");
+			//logica para checkar shape do ponto
+			int avg=(a1+a2+a3)/3;
+			int avgBig=(int)(avg*1.1);
+			int avgSmall=(int)(avg*0.9);
+			if(a1>avgBig || a1<avgSmall || a2>avgBig || a2<avgSmall || a3>avgBig || a3<avgSmall){
+				continue;
 			}
+			//logica para conferir angulo reto entre os 2 pontos
+			
+			list2point.add(reg.remove(0));
+			list2point.add(reg.remove(0));
+			list2point.add(reg.remove(0));
+			Collections.sort(list2point,new Sorter("centroy",-1));
+			ponto1=list2point.remove(0);
+			Collections.sort(list2point,new Sorter("centrox",1));
+			ponto2=list2point.remove(0);
+			ponto3=list2point.remove(0);
+			break;
+			//essa logica precisa ser melhorada horrores
 		}
 		
-		//get closest region
-		Hashtable<String,Integer> closestP=null;
-		int d=0;
-		int yd=0;
+		List<Hashtable<String,Integer>> col1=new Vector<Hashtable<String,Integer>>();
+		List<Hashtable<String,Integer>> col2=new Vector<Hashtable<String,Integer>>();
+		//linha entre ponto1 e ponto2
+		double a=(double)(ponto1.get("centrox")-ponto2.get("centrox"))/(double)(ponto1.get("centroy")-ponto2.get("centroy"));
+		double b=(double)ponto1.get("centrox")-a*(double)ponto1.get("centroy");
+		double b2=(double)ponto3.get("centrox")-a*(double)ponto3.get("centroy");
+		
 		for(int i=0;i<reg.size();i++){
-			if(reg.get(i)!=lmostP){
-				if(closestP==null){
-					closestP=reg.get(i);
-					yd=reg.get(i).get("centroy")-lmostP.get("centroy");
-					int xd=lmostP.get("centrox")-reg.get(i).get("centrox");
-					d=(int)Math.sqrt((xd)*(xd)+(yd)*(yd));
-				}else{
-					int ydCand=reg.get(i).get("centroy")-lmostP.get("centroy");
-					int xd=lmostP.get("centrox")-reg.get(i).get("centrox");
-					int dCand=(int)Math.sqrt(xd*xd+ydCand*ydCand);
-					if(dCand<d){
-						closestP=reg.get(i);
-						d=dCand;
-						yd=ydCand;
+			int x=(int)(reg.get(i).get("centroy")*a+b);
+			int x2=(int)(reg.get(i).get("centroy")*a+b2);
+			int xAt=reg.get(i).get("centrox");
+			if(x+5>xAt && x-5<xAt){//coluna1
+				col1.add(reg.remove(i--));
+			}else if(x2+5>xAt && x2-5<xAt){//coluna2
+				col2.add(reg.remove(i--));
+			}
+		}
+		Collections.sort(col1,new Sorter("centroy",1));
+		Collections.sort(col2,new Sorter("centroy",1));
+		if(col1.size()!=col2.size())System.out.println("tamanho da coluna dos clocks invalido");
+		//check number of questions
+		Hashtable<Integer,List<String>> resp=new Hashtable<Integer,List<String>>();
+		for(int i=0;i<col1.size();i++){
+			Hashtable<String,Integer> clock1=col1.get(i);
+			Hashtable<String,Integer> clock2=col2.get(i);
+			//int distx=clock2.get("centrox")-clock1.get("centrox");
+			double aClock=(double)(clock2.get("centroy")-clock1.get("centroy"))/(double)(clock2.get("centrox")-clock1.get("centrox"));
+			double bClock=(double)clock1.get("centroy")-aClock*(double)clock1.get("centrox");
+			double clockDistX=((double)(clock2.get("centrox")-clock1.get("centrox")))/25;
+			for(int j=0;j<reg.size();j++){
+				int y=(int)(reg.get(j).get("centrox")*aClock+bClock);
+				int yAt=reg.get(j).get("centroy");
+				if(y+5>yAt && y-5<yAt){//ponto entre 2 clocks
+					int pos=(int)Math.round((reg.get(j).get("centrox")-clock1.get("centrox"))/clockDistX);
+					char letra=(char)('a'-1+(pos-1)%6);
+					int quesN=(pos-1)/6*col1.size()+i;
+					if(resp.containsKey(quesN)){
+						resp.get(quesN).add(letra+"");
+					}else{
+						List<String>lista=new Vector<String>();
+						lista.add(letra+"");
+						resp.put(quesN, lista);
 					}
 				}
 			}
 		}
 		
-		
-		double a=(double)(lmostP.get("centrox")-closestP.get("centrox"))/(double)(lmostP.get("centroy")-closestP.get("centroy"));
-		double b=(double)closestP.get("centrox")-a*(double)closestP.get("centroy");
-		
-		if(a<1 && a>-1){//usar y
-			Collections.sort(reg,new Sorter("y",a>0?1:-1));
-		}else{//usar x
-			Collections.sort(reg,new Sorter("x",1));
-		}
-		
-		int margem=(int)(d)/2;
-		int margemA=lmostP.get("area")*3;
-		int posLmost=0;while(reg.get(posLmost)!=lmostP)posLmost++;
-		lmostP.put("clock", 1);
-		
-		for(int i=posLmost+1;i<reg.size();i++){//pra um lado
-			int nextx=(int)(reg.get(i).get("centroy")*a+b);
-			int areaAt=reg.get(i).get("area");
-			if(reg.get(i).get("centrox")>nextx-margem && reg.get(i).get("centrox")<nextx+margem && areaAt>lmostP.get("area")-margemA && areaAt<lmostP.get("area")+margemA){
-				reg.get(i).put("clock", 1);
-				a=(double)(lmostP.get("centrox")-reg.get(i).get("centrox"))/(double)(lmostP.get("centroy")-reg.get(i).get("centroy"));
-				b=reg.get(i).get("centrox")-a*reg.get(i).get("centroy");
-				margemA=reg.get(i).get("area")*3;
+		for(int i=0;i<resp.size();i++){
+			
+			System.out.print("<questao ordinal='"+(i+1)+"' letras='");
+			if(resp.get(i)!=null){
+				for(int j=0;j<resp.get(i).size();j++){
+					if(j>0)System.out.print(",");
+					System.out.print(resp.get(i).get(j));
+				}
 			}
-		}
-
-		margemA=lmostP.get("area")*3;
-		b=lmostP.get("centrox")-a*lmostP.get("centroy");
-		for(int i=posLmost-1;i>=0;i--){//pra outro lado
-			int nextx=(int)(reg.get(i).get("centroy")*a+b);
-			int areaAt=reg.get(i).get("area");
-			if(reg.get(i).get("centrox")>nextx-margem && reg.get(i).get("centrox")<nextx+margem && areaAt>lmostP.get("area")-margemA && areaAt<lmostP.get("area")+margemA){
-				reg.get(i).put("clock", 1);
-				b=reg.get(i).get("centrox")-a*reg.get(i).get("centroy");
-			}
-		}
-		
-		if(a<1 && a>-1){//usar y
-			Collections.sort(reg,new Sorter("y",1));
-		}else{//usar x
-			Collections.sort(reg,new Sorter("x",1));
+			System.out.println("'></questao>");
 		}
 		return true;
 	}
 
 }
 
-
+class Sorter implements Comparator<Hashtable<String,Integer>>{
+	private String chave;
+	private int order=1;
+	public Sorter(String chave,int order){
+		this.chave=chave;
+		this.order*=order;
+	}
+	@Override
+	public int compare(Hashtable<String, Integer> o1,Hashtable<String, Integer> o2) {
+		int retPri=-1*this.order;
+		int retSec=1*this.order;
+		if(o1.containsKey("clock") && !o2.containsKey("clock"))return -1;
+		else if(!o1.containsKey("clock") && o2.containsKey("clock"))return 1;
+		else if(o1.get(this.chave)>o2.get(this.chave))return retSec;
+		else if(o1.get(this.chave)==o2.get(this.chave))return 0;
+		else return retPri;
+	}	
+}
