@@ -30,8 +30,12 @@ import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Scanner;
-
 import javax.imageio.ImageIO;
+
+import com.google.zxing.*;
+import com.google.zxing.client.j2se.*;
+import com.google.zxing.common.*;
+import com.google.zxing.qrcode.QRCodeReader;
 
 
 public class home {
@@ -42,8 +46,21 @@ public class home {
 		
 		ImageProcessing clImg=null;
 		try {
-			BufferedImage file = ImageIO.read(new File(in.nextLine()));
-			//BufferedImage file = ImageIO.read(new File("d:/Desktop/tmpRed.png"));
+			//BufferedImage file = ImageIO.read(new File(in.nextLine()));
+			//BufferedImage file = ImageIO.read(new File("d:/Desktop/uia/CCF14012013_0005.jpg"));
+			BufferedImage file = ImageIO.read(new File("d:/Desktop/indice.png"));
+			
+			//achar a regiao especifica do qr code
+			LuminanceSource source = new BufferedImageLuminanceSource(file);
+			BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
+			QRCodeReader reader=new QRCodeReader();
+			try{
+			Result result=reader.decode(bitmap);
+			System.out.println(result.getText());
+			}catch (Exception e) {
+				e.printStackTrace();
+			}
+			
 			
 			int width=file.getWidth();
 			int height=file.getHeight();
@@ -66,7 +83,10 @@ public class home {
 			//clImg.m=clImg.erode(clImg.m);
 			//clImg.m=clImg.dilate(clImg.m);
 			//clImg.m=clImg.dilate(clImg.m);
-		} catch (Exception e) {e.printStackTrace();}
+		} catch (Exception e) {
+			System.out.println("catch");
+			e.printStackTrace();
+		}
 		
 		int[][]res=clImg.bwlabel(clImg.m);
 		List<Hashtable<String,Integer>> reg=clImg.regionProps(res);
