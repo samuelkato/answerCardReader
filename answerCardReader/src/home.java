@@ -1,28 +1,3 @@
-/*
-1 0 0 0 1 1 1 0 1 0
-1 1 0 0 1 1 1 0 1 1
-1 0 1 1 0 0 0 0 1 1
-0 0 0 0 0 0 0 0 1 0
-0 1 1 0 1 0 0 0 1 1
-0 1 0 0 1 0 0 0 1 0
-1 0 1 1 0 0 0 0 0 1
-0 0 0 1 0 0 0 0 1 0
-0 1 1 0 0 1 0 0 1 0
-0 0 1 0 0 0 0 0 1 0
-
-1	0	1	0	0	0	0	1	0	1
-0	0	0	0	0	1	0	0	0	0
-1	1	0	0	1	0	0	1	0	0
-0	0	1	1	0	0	0	0	0	1
-1	0	0	1	1	0	1	1	1	0
-0	0	1	1	0	0	0	1	0	0
-0	0	0	0	1	1	1	0	0	0
-0	1	0	0	0	0	0	0	0	0
-0	1	0	1	1	1	0	1	0	0
-0	0	0	0	0	0	1	0	0	1
-
- */
-
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -48,9 +23,9 @@ public class home {
 		long startTime = System.nanoTime();
 		BufferedImage file=null;
 		try {
-			file = ImageIO.read(new File(in.nextLine()));
+			//file = ImageIO.read(new File(in.nextLine()));
 			//file = ImageIO.read(new File("d:/Desktop/uia/CCF14012013_0005.jpg"));
-			//file = ImageIO.read(new File("d:/Desktop/002.jpg"));
+			file = ImageIO.read(new File("d:/Desktop/005.jpg"));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -212,7 +187,7 @@ public class home {
 			}
 		}
 		
-		for(int i=0;i<resp.size();i++){
+		for (int i=0;i<col1.size()*4;i++) {
 			
 			System.out.print("<questao ordinal='"+(i+1)+"' letras='");
 			if(resp.get(i)!=null){
