@@ -319,6 +319,7 @@ public class ImageProcessing {
 class ConfigImageProcessing{
 	boolean invertThreshold_=false;
 	int minArea=50;
+	long maxArea=999999999;
 	//true => preto
 	//false => branco
 	public boolean checkThreshold(int r, int g, int b, int rAvg, int gAvg, int bAvg){
@@ -329,7 +330,7 @@ class ConfigImageProcessing{
 		//return !(r+g+b>700 || r>180);
 	}
 	public boolean checkRegion(Region regAt){
-		if(regAt.area<this.minArea)return false;
+		if(regAt.area<this.minArea || regAt.area>this.maxArea)return false;
 		int width=regAt.maxx-regAt.minx;
 		int height=regAt.maxy-regAt.miny;
 		float prop=(float)width/height;
@@ -364,4 +365,9 @@ class Region{
 		}
 		return 0;
 	}
+	
+	@Override
+   public String toString() {
+     return "\n-------\narea:"+this.area+"\nx:"+this.centrox+"\ny:"+this.centroy;
+   }
 }

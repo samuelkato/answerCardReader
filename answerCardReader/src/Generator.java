@@ -43,7 +43,7 @@ public class Generator {
 		//write the image to the output stream
 		try {
 			ImageIO.write(image, "png", System.out);
-			if(args.length==0)ImageIO.write(image, "png", new File("d:/Desktop/indice.png"));
+			if(args.length==0)ImageIO.write(image, "png", new File("/home/samuelkato/aoba.png"));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

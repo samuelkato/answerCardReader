@@ -1,9 +1,11 @@
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-import java.io.File;
+import java.io.*;
+import java.io.Writer;
 import java.util.*;
-import javax.imageio.ImageIO;
 
+import javax.imageio.ImageIO;
+import javax.swing.JFileChooser;
 
 import com.google.zxing.*;
 import com.google.zxing.client.j2se.*;
@@ -12,49 +14,104 @@ import com.google.zxing.qrcode.QRCodeReader;
 
 
 public class Reader {
-	public static Scanner in=new Scanner(System.in);
 	public static void main(String[] args) {
-		
-		long startTime = System.nanoTime();
-		BufferedImage file=null;
-		try {
-			file = ImageIO.read(new File(in.nextLine()));
-			//file = ImageIO.read(new File("d:/Desktop/uia/CCF14012013_0005.jpg"));
-			//file = ImageIO.read(new File("d:/Desktop/folhaRespostas/006.jpg"));
-			//file = ImageIO.read(new File("d:/Desktop/cartao.png"));
-		} catch (Exception e) {
-			e.printStackTrace();
+		new Reader();
+	}
+	
+	public Reader(){
+		JFileChooser chooser = new JFileChooser();
+		String saida="";
+		chooser.setCurrentDirectory(new java.io.File(System.getenv().get("HOME")));
+		chooser.setDialogTitle("Selecione a pasta desejada");
+		chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+		chooser.setAcceptAllFileFilterUsed(false);
+		while(true){
+			if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+				saida="["+listFilesForFolder(chooser.getSelectedFile())+"]";
+	
+				try {
+					File fileSaida=new File(chooser.getSelectedFile().getAbsolutePath()+"/saida.json");
+					if (!fileSaida.exists())fileSaida.createNewFile();
+					
+					FileWriter fw = new FileWriter(fileSaida.getAbsoluteFile());
+					BufferedWriter bw = new BufferedWriter(fw);
+					
+					bw.write(saida);
+					bw.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}else{
+				break;
+			}
 		}
+		
+		//System.out.println(saida);
+	}
+	
+	/*
+	public Reader(){
+	 
+		File file=new File("/home/samuelkato/Área de Trabalho/1A/");
+		String saida="["+listFilesForFolder(file)+"]";
+		System.out.println(saida);
+	}
+	*/
+	
+	private String listFilesForFolder(final File folder) {
+		String saida="";
+        for (final File fileEntry : folder.listFiles()) {
+            if (fileEntry.isDirectory()) {
+            	//String ret=listFilesForFolder(fileEntry);//versao recursiva
+            	//if(!ret.equals("")){
+            	//	if(!saida.equals(""))saida+=",";
+            	//	saida+=ret;
+            	//}
+            } else {
+        		try {
+        			BufferedImage file = ImageIO.read(fileEntry);
+                	String retAt=processaImg(file);
+                	//em caso de erro nao adiciona o arquivo aki
+                	if(!saida.equals(""))saida+=",";
+                	saida+=retAt;
+        		} catch (Exception e) {
+        			System.out.println("erro ao processar o arquivo "+fileEntry.getAbsolutePath()+"\n"+e.getMessage());
+        		}//ignora arquivos nao imagem e outros erros
+            }
+        }
+        return saida;
+    }
+	
+	private String processaImg(BufferedImage file) {
+		long startTime = System.nanoTime();
 		
 		String qr=lerQr(file);
 		
 		BufferedImage resizedImage=criarImagemRedimensionada(file);
 		ImageProcessing clImg=new ImageProcessing(resizedImage);
 		
-		
-		
-		
-		
 		float tempo=((float)System.nanoTime() - startTime)/1000000000;
-		System.out.println("<cartao tempo='"+tempo+"' qr='"+qr+"'>");
-		lerCartao(clImg);
-		System.out.println("</cartao>");
 		
+		String saida=String.format(Locale.US,"{\"qr\":\"%1$s\",\"tempo\":%2$f,\"questoes\":[%3$s]}",qr,tempo,lerCartao(clImg));
+		
+		return saida;
 	}
 	
-	public static List<Region> procurar3pontos(ImageProcessing clImg){
+	private List<Region> procurar3pontos(ImageProcessing clImg){
 		ConfigImageProcessing config=new ConfigImageProcessing();
 		config.invertThreshold_=true;
-		config.minArea=600;
+		config.minArea=1000;
+		config.maxArea=1800;
 		boolean[][] mInv=clImg.createMatrix(config);
 		int[][] bwInv=clImg.bwlabel(mInv);
-		//clImg.saveFilteredImage("d:/desktop/tmpSaida.png",mInv);
-		//clImg.saveFilteredImage("d:/desktop/tmpSaida2.png",bwInv);
+		//clImg.saveFilteredImage("/home/samuelkato/tmp.bmp",mInv);
+		//clImg.saveFilteredImage("/home/samuelkato/tmp.bmp",bwInv);
 		List<Region> regInv=clImg.regionProps(bwInv);
 		
 		regInv.remove(0);
 		regInv.remove(0);
 		regInv=clImg.filterRegions(regInv,config);
+		
 		List<Region> ret=new Vector<Region>();
 		List<int[]> sorter=new Vector<int[]>();
 		for(int i=0;i<regInv.size();i++){
@@ -73,11 +130,13 @@ public class Reader {
 		ret.add(regInv.get(sorter.remove(0)[0]));
 		
 		
+		//System.out.println(ret);
+		
 		//check perpendicular
 		return ret;
 	}
 	
-	public static BufferedImage criarImagemRedimensionada(BufferedImage file){
+	private BufferedImage criarImagemRedimensionada(BufferedImage file){
 		int width=file.getWidth();
 		int height=file.getHeight();
 		if(width<=1000 && height<=1000)return file;
@@ -92,16 +151,10 @@ public class Reader {
 		Graphics2D g = resizedImage.createGraphics();
 		g.drawImage(file, 0, 0, width, height, null);
 		g.dispose();
-		/*
-		try {
-			ImageIO.write(resizedImage, "jpg", new File("d:/Desktop/tmp.jpg"));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		*/
+
 		return resizedImage;
 	}
-	public static BufferedImage criarRegiaoQr(BufferedImage file){
+	private BufferedImage criarRegiaoQr(BufferedImage file){
 		int width=file.getWidth();
 		int height=file.getHeight();
 		BufferedImage resizedImage = new BufferedImage(400, 400, 5);
@@ -109,15 +162,9 @@ public class Reader {
 		g.drawImage(file, 0, 0, width/2, height/2, null);
 		g.dispose();
 		
-		/*try {
-			ImageIO.write(resizedImage, "jpg", new File("d:/Desktop/tmp.jpg"));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		*/
 		return resizedImage;
 	}
-	public static String lerQr(BufferedImage file){
+	private String lerQr(BufferedImage file){
 		//achar a regiao especifica do qr code
 		String result="";
 		LuminanceSource source = new BufferedImageLuminanceSource(criarRegiaoQr(file));
@@ -130,11 +177,8 @@ public class Reader {
 		}
 		return result;
 	}
-	public static int fx(int x,double a,double b){
-		return (int)(x*a+b);
-	}
-	
-	public static boolean lerCartao(ImageProcessing clImg){
+
+	private String lerCartao(ImageProcessing clImg){
 		boolean[][] m=clImg.createMatrix();
 		//m=clImg.erode(m);
 		//clImg.m=clImg.erode(clImg.m);
@@ -177,61 +221,46 @@ public class Reader {
 			double bClock=(double)clock1.centroy-aClock*(double)clock1.centrox;
 			double clockDistX=((double)(clock2.centrox-clock1.centrox))/25;
 			for(int j=1;j<25;j++){
+				if((j-1)%6==0)continue;
+				
 				int x=(int)(clockDistX*j+clock1.centrox);
 				int y=(int)(x*aClock+bClock);
-				if(conferirMarcacao(x,y,m)){
-					int quesN=(j-1)/6*col1.size()+i;
-					char letra=(char)('a'-1+(j-1)%6);
-					if(resp.containsKey(quesN)){
-						resp.get(quesN).add(letra+"");
-					}else{
-						List<String>lista=new Vector<String>();
-						lista.add(letra+"");
-						resp.put(quesN, lista);
-					}
+				
+				String marca=String.format(Locale.US, "%1$d",Math.round(conferirMarcacao(x,y,m)*100));
+				
+				int quesN=(j-1)/6*col1.size()+i;
+				if(resp.containsKey(quesN)){
+					resp.get(quesN).add(marca);
+				}else{
+					List<String>lista=new Vector<String>();
+					lista.add(marca);
+					resp.put(quesN, lista);
 				}
 			}
-			/*System.exit(0);
-			for(int j=0;j<reg.size();j++){
-				int y=(int)(reg.get(j).centrox*aClock+bClock);
-				int yAt=reg.get(j).centroy;
-				if(y+5>yAt && y-5<yAt){//ponto entre 2 clocks
-					int pos=(int)Math.round((reg.get(j).centrox-clock1.centrox)/clockDistX);
-					char letra=(char)('a'-1+(pos-1)%6);
-					int quesN=(pos-1)/6*col1.size()+i;
-					if(resp.containsKey(quesN)){
-						resp.get(quesN).add(letra+"");
-					}else{
-						List<String>lista=new Vector<String>();
-						lista.add(letra+"");
-						resp.put(quesN, lista);
-					}
-				}
-			}*/
 		}
-		
+		String saida="";
 		for (int i=0;i<col1.size()*4;i++) {
-			
-			System.out.print("<questao ordinal='"+(i+1)+"' letras='");
+			String alts="";
 			if(resp.get(i)!=null){
 				for(int j=0;j<resp.get(i).size();j++){
-					if(j>0)System.out.print(",");
-					System.out.print(resp.get(i).get(j));
+					if(j>0)alts+=",";
+					alts+=resp.get(i).get(j);
 				}
 			}
-			System.out.println("'></questao>");
+			if(i>0)saida+=",";
+			saida+=String.format("[%1$s]", alts);
 		}
-		return true;
+		return saida;
 	}
 	
-	public static boolean conferirMarcacao(int x,int y, boolean[][] m){
+	private float conferirMarcacao(int x,int y, boolean[][] m){
 		int cnt=0;
-		for(int i=x-3;i<x+3;i++){
-			for(int j=y-5;j<y+5;j++){
+		for(int i=x-5;i<x+5;i++){
+			for(int j=y-3;j<y+3;j++){
 				if(m[j][i])cnt++;
 			}
 		}
-		return (float)cnt/60>0.1;
+		return (float)cnt/60;
 	}
 
 }
