@@ -26,8 +26,10 @@ public class Reader {
 		chooser.setAcceptAllFileFilterUsed(false);
 		while(true){
 			if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-				saida="["+listFilesForFolder(chooser.getSelectedFile())+"]";
-	
+				saida="[\n"+listFilesForFolder(chooser.getSelectedFile())+"\n]";
+				/*
+				exibir progresso dos arquivos e outras informacoes
+				*/
 				try {
 					File fileSaida=new File(chooser.getSelectedFile().getAbsolutePath()+"/saida.json");
 					if (!fileSaida.exists())fileSaida.createNewFile();
@@ -59,25 +61,28 @@ public class Reader {
 	
 	private String listFilesForFolder(final File folder) {
 		String saida="";
-        for (final File fileEntry : folder.listFiles()) {
-            if (fileEntry.isDirectory()) {
-            	//String ret=listFilesForFolder(fileEntry);//versao recursiva
-            	//if(!ret.equals("")){
-            	//	if(!saida.equals(""))saida+=",";
-            	//	saida+=ret;
-            	//}
-            } else {
-        		try {
-        			BufferedImage file = ImageIO.read(fileEntry);
-                	String retAt=processaImg(file);
-                	//em caso de erro nao adiciona o arquivo aki
-                	if(!saida.equals(""))saida+=",";
-                	saida+=retAt;
-        		} catch (Exception e) {
-        			System.out.println("erro ao processar o arquivo "+fileEntry.getAbsolutePath()+"\n"+e.getMessage());
-        		}//ignora arquivos nao imagem e outros erros
-            }
-        }
+		for (final File fileEntry : folder.listFiles()) {
+			if (fileEntry.isDirectory()) {
+				// String ret=listFilesForFolder(fileEntry);//versao recursiva
+				// if(!ret.equals("")){
+				// if(!saida.equals(""))saida+=",";
+				// saida+=ret;
+				// }
+			} else {
+				try {
+					BufferedImage file = ImageIO.read(fileEntry);
+					String retAt = processaImg(file);
+					// em caso de erro nao adiciona o arquivo aki
+					if (!saida.equals(""))
+						saida += ",\n";
+					saida += "\t"+retAt;
+				} catch (Exception e) {
+					System.out.println("erro ao processar o arquivo "
+							+ fileEntry.getAbsolutePath() + "\n"
+							+ e.getMessage());
+				}// ignora arquivos nao imagem e outros erros
+			}
+		}
         return saida;
     }
 	
@@ -91,7 +96,8 @@ public class Reader {
 		
 		float tempo=((float)System.nanoTime() - startTime)/1000000000;
 		
-		String saida=String.format(Locale.US,"{\"qr\":\"%1$s\",\"tempo\":%2$f,\"questoes\":[%3$s]}",qr,tempo,lerCartao(clImg));
+		//String saida=String.format(Locale.US,"{\"qr\":\"%1$s\",\"tempo\":%2$f,\"questoes\":[%3$s]}",qr,tempo,lerCartao(clImg));
+		String saida=String.format(Locale.US,"{\"qr\":\"%1$s\",\"questoes\":[%2$s]}",qr,lerCartao(clImg));
 		
 		return saida;
 	}
