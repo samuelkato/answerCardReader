@@ -1,7 +1,6 @@
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.io.Writer;
 import java.util.*;
 
 import javax.imageio.ImageIO;
@@ -21,7 +20,7 @@ public class Reader {
 	public Reader(){
 		JFileChooser chooser = new JFileChooser();
 		String saida="";
-		chooser.setCurrentDirectory(new java.io.File(System.getenv().get("HOME")));
+		//chooser.setCurrentDirectory(new java.io.File(System.getenv().get("HOME")));
 		chooser.setDialogTitle("Selecione a pasta desejada");
 		chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		chooser.setAcceptAllFileFilterUsed(false);
