@@ -164,7 +164,12 @@ public final class QRCodeMultiReader extends QRCodeReader implements MultipleBar
   }
 
   private static final class SAComparator implements Comparator<Result>, Serializable {
-    @Override
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	@Override
     public int compare(Result a, Result b) {
       int aNumber = (int) (a.getResultMetadata().get(ResultMetadataType.STRUCTURED_APPEND_SEQUENCE));
       int bNumber = (int) (b.getResultMetadata().get(ResultMetadataType.STRUCTURED_APPEND_SEQUENCE));

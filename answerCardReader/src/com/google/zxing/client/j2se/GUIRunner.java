@@ -49,7 +49,11 @@ import javax.swing.text.JTextComponent;
  */
 public final class GUIRunner extends JFrame {
 
-  private final JLabel imageLabel;
+  /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+private final JLabel imageLabel;
   private final JTextComponent textArea;
 
   private GUIRunner() {

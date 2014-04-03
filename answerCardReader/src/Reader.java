@@ -510,7 +510,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     	 * @param pontosRef
     	 * @param reg
     	 */
-    	private void gerarPontosCartao(List<Region> pontosRef, List<Region> reg, int nClocks) {
+    	/*private void gerarPontosCartao(List<Region> pontosRef, List<Region> reg, int nClocks) {
     		Region ponto1=pontosRef.get(0);
     		Region ponto2=pontosRef.get(1);
     		Region ponto3=pontosRef.get(2);
@@ -540,7 +540,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     			
     			reg.add(new Region(60, xEsq, yEsq, xEsq-5, yEsq-5, xEsq+5, yEsq+5, xEsq+yEsq));
     		}
-		}
+		}*/
 
     	/**
     	 * verifica a porcentagem preenchida de uma marcacao
