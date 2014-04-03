@@ -62,7 +62,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 		super(new BorderLayout());
 		 
         //Create the demo's UI.
-        startButton = new JButton("Start");
+        startButton = new JButton("Escolher Pasta");
         startButton.setActionCommand("start");
         startButton.addActionListener(this);
  
@@ -142,6 +142,8 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
          */
         @Override
         public Void doInBackground() {
+        	taskOutput.append("Inicio do processamento na pasta: "+this.folder.getAbsolutePath()+"\n");
+			System.out.println("Inicio do processamento na pasta: "+this.folder.getAbsolutePath());
         	String saida="[\n"+listFilesForFolder(this.folder)+"\n]";
         	taskOutput.append("\nFim da pasta "+this.folder.getAbsolutePath()+"\n");
 			System.out.println("\nFim da pasta "+this.folder.getAbsolutePath()+"\n");
@@ -155,11 +157,11 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 				
 				bw.write(saida);
 				bw.close();
-				taskOutput.append("Json gravado com sucesso em: "+fileSaida.getAbsolutePath());
-				System.out.println("Json gravado com sucesso em: "+fileSaida.getAbsolutePath());
+				taskOutput.append("Json gravado com sucesso em: "+fileSaida.getAbsolutePath()+"\n\n");
+				System.out.println("Json gravado com sucesso em: "+fileSaida.getAbsolutePath()+"\n");
 			} catch (IOException e) {
-				taskOutput.append("Erro ao grava o arquivo "+fileSaida.getAbsolutePath());
-				System.out.println("Erro ao grava o arquivo "+fileSaida.getAbsolutePath());
+				taskOutput.append("Erro ao grava o arquivo "+fileSaida.getAbsolutePath()+"\n\n");
+				System.out.println("Erro ao grava o arquivo "+fileSaida.getAbsolutePath()+"\n");
 			}
             return null;
         }
@@ -189,6 +191,8 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 						file.getType();//soh pra levantar uma Exception
 						try {
 	    					retAt = lerCartao(file);
+	    					if (!saida.equals(""))saida += ",\n";
+	    					saida += "\t"+retAt;
 	    				}catch (Exception e) {
 	    					retAt = "\"Erro: " + fileEntry.getAbsolutePath() + ": " + e.getMessage() + '"';
 	    				}
@@ -196,9 +200,6 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 						retAt="\"Erro: " + fileEntry.getAbsolutePath() + " nao é imagem.\"";
 					}
 					System.out.println(retAt);
-    				
-    				if (!saida.equals(""))saida += ",\n";
-					saida += "\t"+retAt;
 					taskOutput.append(retAt+"\n");
     			}
     			int progress=(int)Math.floor(((float)++n/a.length)*100);
@@ -538,13 +539,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     			reg.add(new Region(60, x, y, x-5, y-5, x+5, y+5, x+y));
     			
     			reg.add(new Region(60, xEsq, yEsq, xEsq-5, yEsq-5, xEsq+5, yEsq+5, xEsq+yEsq));
-    			
-    			//System.out.println("dir:"+x+":"+y+" esq:"+xEsq+":"+yEsq);
     		}
-    		
-    		//System.out.println("disty:"+disty+" priClock:"+(57*razao)+" lastClock:"+(167*razao));
-    		//System.out.println("p1="+ponto1.centrox+":"+ponto1.centroy+" p2="+ponto2.centrox+":"+ponto2.centroy+" p3="+ponto3.centrox+":"+ponto3.centroy);
-    		
 		}
 
     	/**
