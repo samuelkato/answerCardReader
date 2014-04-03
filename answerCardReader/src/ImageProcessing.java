@@ -1,27 +1,34 @@
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.List;
 import java.util.Vector;
+
 import javax.imageio.ImageIO;
 
 
 public class ImageProcessing {
 	BufferedImage img=null;
+	boolean[][] m=null;
+	boolean[][] mInv=null;
 	int rAvg,gAvg,bAvg,width,height;
 	int[][][] oRgb=null;
 	public ImageProcessing(BufferedImage img) {
-		this.width = img.getWidth();
-		this.height=img.getHeight();
-		
+		this.img=this.criarImagemRedimensionada(img);
+		this.width = this.img.getWidth();
+		this.height = this.img.getHeight();
+		this.m=new boolean[this.height][this.width];
+		this.mInv=new boolean[this.height][this.width];
 		this.oRgb=new int[height][width][3];
+		
 		long red=0;
 		long green=0;
 		long blue=0;
 		for (int x = 0; x < width; x++) {
 			for (int y = 0; y < height; y++) {
-				int color = img.getRGB(x, y);
-				this.oRgb[y][x][0]=(color & 0x00ff0000) >> 16;
-				this.oRgb[y][x][1]=(color & 0x0000ff00) >> 8;
+				int color = this.img.getRGB(x, y);
+				this.oRgb[y][x][0]=((color & 0x00ff0000) >> 16);
+				this.oRgb[y][x][1]=((color & 0x0000ff00) >> 8);
 				this.oRgb[y][x][2]=(color & 0x000000ff);
 				red+=this.oRgb[y][x][0];
 				green+=this.oRgb[y][x][1];
@@ -35,44 +42,172 @@ public class ImageProcessing {
 		this.gAvg=(int)green;
 		this.bAvg=(int)blue;
 	}
+	/*
+	public void rotate(int ang){
+		int[][][] newORgb=new int[width][height][3];
+		switch(ang){
+		case 90:
+			for(int y=0; y<this.height; y++){
+				for(int x=0; x<this.width; x++){
+					int newy=x, newx=this.height-1-y;
+					newORgb[newy][newx]=this.oRgb[y][x];
+				}
+			}
+			break;
+		case 180:
+			break;
+		case -90:
+			break;
+		default:
+			break;
+		}
+		this.height=newORgb.length;
+		this.width=newORgb[0].length;
+		
+		this.oRgb=newORgb;
+		this.m=new boolean[this.height][this.width];
+		this.mInv=new boolean[this.height][this.width];
+		
+		this.createMatrix();
+	}
+	*/
 	public boolean[][] createMatrix(){
-		return createMatrix(new ConfigImageProcessing());
+		this.m=createMatrix(new ConfigImageProcessing());
+		return this.m;
 	}
 	public boolean[][] createMatrix(ConfigImageProcessing clComp){
-		boolean[][] m=new boolean[this.height][this.width];
-		
 		//System.out.println(red+","+green+","+blue);
 		for (int x = 0; x < width; x++) {
 			for (int y = 0; y < height; y++) {
 				int r=this.oRgb[y][x][0];
 				int g=this.oRgb[y][x][1];
 				int b=this.oRgb[y][x][2];
-				m[y][x]=clComp.checkThreshold(r, g, b, this.rAvg, this.gAvg, this.bAvg);
+				this.m[y][x]=clComp.checkThreshold(r, g, b, this.rAvg, this.gAvg, this.bAvg);
+				this.mInv[y][x]=!this.m[y][x];
 			}
 		}
-		return m;
+		return this.m;
+	}
+	
+	/**
+	 * Rotates an image. Actually rotates a new copy of the image.
+	 * 
+	 * @param img The image to be rotated
+	 * @param angle The angle in degrees
+	 * @return The rotated image
+	 */
+	public BufferedImage rotate(BufferedImage img, int angle) {
+		int width=img.getWidth();
+		int height=img.getHeight();
+		
+		//para agilizar nos angulos de 90,180,-90
+		if(angle==90){
+			BufferedImage imgRot = new BufferedImage(height,width,BufferedImage.TYPE_INT_RGB);
+			for(int y=0; y<height; y++){
+				for(int x=0; x<width; x++){
+					int newy=x, newx=height-1-y;
+					imgRot.setRGB(newx, newy, img.getRGB(x, y));
+				}
+			}
+			return imgRot;
+		}else if(angle==180){
+			BufferedImage imgRot = new BufferedImage(width,height,BufferedImage.TYPE_INT_RGB);
+			for(int y=0; y<height; y++){
+				for(int x=0; x<width; x++){
+					int newy=height-1-y, newx=width-1-x;
+					imgRot.setRGB(newx, newy, img.getRGB(x, y));
+				}
+			}
+			return imgRot;
+		}else if(angle==-90){
+			BufferedImage imgRot = new BufferedImage(height,width,BufferedImage.TYPE_INT_RGB);
+			for(int y=0; y<height; y++){
+				for(int x=0; x<width; x++){
+					int newy=width-1-x, newx=y;
+					imgRot.setRGB(newx, newy, img.getRGB(x, y));
+				}
+			}
+			return imgRot;
+		}
+		
+		
+		
+	    double sin = Math.abs(Math.sin(Math.toRadians(angle))),
+	           cos = Math.abs(Math.cos(Math.toRadians(angle)));
+
+	    int w = img.getWidth(null), h = img.getHeight(null);
+
+	    int neww = (int) Math.floor(w*cos + h*sin),
+	        newh = (int) Math.floor(h*cos + w*sin);
+	    
+	    //BufferedImage bimg = toBufferedImage(getEmptyImage(neww, newh));
+	    BufferedImage bimg = new BufferedImage(neww, newh, 5);
+	    for(int i=0;i<neww;i+=1){
+	    	for(int j=0;j<newh;j+=1)bimg.setRGB(i, j, 16777215);
+	    }
+	    Graphics2D g = bimg.createGraphics();
+
+	    g.translate((neww-w)/2, (newh-h)/2);
+	    g.rotate(Math.toRadians(angle), w/2, h/2);
+	    g.drawRenderedImage(img, null);
+	    g.dispose();
+	    
+	    return bimg;
+	}
+	
+	/**
+	 * cria uma imagem redimensionada a partir de uma imagem de referencia
+	 * 
+	 * @param file
+	 * @return imagem redimensionada
+	 */
+	public BufferedImage criarImagemRedimensionada(BufferedImage file){
+		int width=file.getWidth();
+		int height=file.getHeight();
+		
+		if(width<=1000 && height<=1000)return file;
+		if(width>height){
+			height/=(float)width/1000;
+			width=1000;
+		}else{
+			width/=(float)height/1000;
+			height=1000;
+		}
+		BufferedImage resizedImage = new BufferedImage(width, height, 5);
+		Graphics2D g = resizedImage.createGraphics();
+		g.drawImage(file, 0, 0, width, height, null);
+		g.dispose();
+
+		return resizedImage;
 	}
 
 	public void saveFilteredImage(String fileName,boolean[][] m){
-		int height=m.length;
-		int width=m[0].length;
-		BufferedImage img = new BufferedImage(width,height,BufferedImage.TYPE_INT_RGB);
-
-		for (int x = 0; x < width; x++) {
-			for (int y = 0; y < height; y++) {
-				if(m[y][x]/* && reg[res[y][x]][0]>400*/){
-					img.setRGB(x, y,0);
-				}else{
-					img.setRGB(x, y,0xffffff);
-				}
-			}
-		}
+		BufferedImage img = matrix2img(m);
+		
 		try{
 			ImageIO.write(img,"bmp",new File(fileName));
 		}catch (Exception e) {
 			
 		}
 	}
+	
+	public BufferedImage matrix2img(boolean[][] m){
+		int height=m.length;
+		int width=m[0].length;
+		
+		BufferedImage img = new BufferedImage(width,height,BufferedImage.TYPE_BYTE_BINARY);
+		for (int x = 0; x < width; x++) {
+			for (int y = 0; y < height; y++) {
+				if(m[y][x]){
+					img.setRGB(x, y,0);
+				}else{
+					img.setRGB(x, y,0xffffff);
+				}
+			}
+		}
+		return img;
+	}
+	
 	public void saveFilteredImage(String fileName,int[][] m){
 		int height=m.length;
 		int width=m[0].length;
@@ -85,62 +220,15 @@ public class ImageProcessing {
 			cor[i]=cor[i]<<8;
 			cor[i]=cor[i]|(int)(Math.random()*255);
 		}*/
-		int[] cor=new int[100];
-		cor[0]=8381564;
-		cor[1]=0xff0000;
-		cor[2]=0x00ff00;
-		cor[3]=0x0000ff;
-		cor[4]=0x00FFff;
-		cor[5]=0xFF00ff;
-		cor[6]=0xFFff00;
-		cor[7]=6637909;
-		cor[8]=7314075;
-		cor[9]=0xffffff;
-		cor[10]=0x00ff00;
-		cor[11]=0x00ff00;
-		cor[12]=0x00ff00;
-		cor[13]=0x00ff00;
-		cor[14]=0xffffff;
-		cor[15]=0xffffff;
-		cor[16]=0;
-		cor[17]=5291567;
-		cor[18]=4002483;
-		cor[19]=13587305;
-		cor[20]=1939733;
-		cor[21]=13133125;
-		cor[22]=3929930;
-		cor[23]=5385166;
-		cor[24]=1006952;
-		cor[25]=11338835;
-		cor[26]=13080858;
-		cor[27]=4629900;
-		cor[28]=9044988;
-		cor[29]=4562419;
-		cor[30]=9233338;
-		cor[31]=10526393;
-		cor[32]=12634977;
-		cor[33]=15569486;
-		cor[34]=12125792;
-		cor[35]=11446530;
-		cor[36]=1185377;
-		cor[37]=6779463;
-		cor[38]=14251419;
-		cor[39]=4371168;
-		cor[40]=105668;
-		cor[41]=9456072;
-		cor[42]=5782724;
-		cor[43]=5806149;
-		cor[44]=14925841;
-		cor[45]=14986550;
-		cor[46]=9797982;
-		cor[47]=1238791;
-		cor[48]=15306702;
-		cor[49]=4985815;
+		int[] cor=new int[3];
+		cor[0]=0xffdddd;
+		cor[1]=0xddffdd;
+		cor[2]=0xddddff;
 
 		for (int x = 0; x < width; x++) {
 			for (int y = 0; y < height; y++) {
 				if(m[y][x]!=0){
-					img.setRGB(x, y,cor[m[y][x]]);
+					img.setRGB(x, y,cor[m[y][x]%cor.length]);
 				}else{
 					img.setRGB(x, y,0);
 				}
@@ -277,10 +365,10 @@ public class ImageProcessing {
 		long[][] tmp=new long[nRegions][7];
 
 		for(int i=0;i<nRegions;i++){
-			tmp[i][3]=width+1;
-			tmp[i][4]=height+1;
-			tmp[i][5]=-1;
-			tmp[i][6]=-1;
+			tmp[i][3]=width+1;//minx
+			tmp[i][4]=height+1;//miny
+			tmp[i][5]=-1;//maxx
+			tmp[i][6]=-1;//maxy
 		}
 		for(int i=0;i<height;i++){
 			for(int j=0;j<width;j++){
@@ -293,6 +381,7 @@ public class ImageProcessing {
 				if(i>tmp[res[i][j]][4])tmp[res[i][j]][6]=i;
 			}
 		}
+		
 		for(int i=0;i<nRegions;i++){
 			tmp[i][1]=(tmp[i][1]/tmp[i][0]);
 			tmp[i][2]=(tmp[i][2]/tmp[i][0]);
@@ -317,16 +406,13 @@ public class ImageProcessing {
 	}
 }
 class ConfigImageProcessing{
-	boolean invertThreshold_=false;
 	int minArea=50;
 	long maxArea=999999999;
 	//true => preto
 	//false => branco
 	public boolean checkThreshold(int r, int g, int b, int rAvg, int gAvg, int bAvg){
 		//return !(r>g+20 && r>b+20) && r+g+b800;
-		boolean ret=r+g+b<rAvg+gAvg+bAvg-80 && !(r>g+10 && r>b+10 && r>150);
-		if(!invertThreshold_)return ret;
-		else return !ret;
+		return r+g+b<rAvg+gAvg+bAvg-80 && !(r>g+10 && r>b+10 && r>150);
 		//return !(r+g+b>700 || r>180);
 	}
 	public boolean checkRegion(Region regAt){
