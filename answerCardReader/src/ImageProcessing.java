@@ -14,7 +14,7 @@ public class ImageProcessing {
 	int rAvg,gAvg,bAvg,width,height;
 	int[][][] oRgb=null;
 	public ImageProcessing(BufferedImage img) {
-		this.img=this.criarImagemRedimensionada(img);
+		this.img=criarImagemRedimensionada(img, 1000);
 		this.width = this.img.getWidth();
 		this.height = this.img.getHeight();
 		this.m=new boolean[this.height][this.width];
@@ -96,7 +96,7 @@ public class ImageProcessing {
 	 * @param angle The angle in degrees
 	 * @return The rotated image
 	 */
-	public BufferedImage rotate(BufferedImage img, int angle) {
+	public static BufferedImage rotate(BufferedImage img, int angle) {
 		int width=img.getWidth();
 		int height=img.getHeight();
 		
@@ -161,17 +161,17 @@ public class ImageProcessing {
 	 * @param file
 	 * @return imagem redimensionada
 	 */
-	public BufferedImage criarImagemRedimensionada(BufferedImage file){
+	public static BufferedImage criarImagemRedimensionada(BufferedImage file, int max){
 		int width=file.getWidth();
 		int height=file.getHeight();
 		
-		if(width<=1000 && height<=1000)return file;
+		if(width<=max && height<=max)return file;
 		if(width>height){
-			height/=(float)width/1000;
-			width=1000;
+			height/=(float)width/max;
+			width=max;
 		}else{
-			width/=(float)height/1000;
-			height=1000;
+			width/=(float)height/max;
+			height=max;
 		}
 		BufferedImage resizedImage = new BufferedImage(width, height, 5);
 		Graphics2D g = resizedImage.createGraphics();

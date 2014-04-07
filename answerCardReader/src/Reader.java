@@ -190,7 +190,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 						file = ImageIO.read(fileEntry);
 						file.getType();//soh pra levantar uma Exception
 						try {
-	    					retAt = lerCartao(file);
+							retAt = lerCartao(file);
 	    					if (!saida.equals(""))saida += ",\n";
 	    					saida += "\t"+retAt;
 	    				}catch (Exception e) {
@@ -226,24 +226,25 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     			switch(e.getMessage()){
     			case "90":
     				System.out.println("imagem rotacionada em 90");
-    				file=clImg.rotate(file,90);
+    				file=ImageProcessing.rotate(file,90);
     				break;
     			case "180":
     				System.out.println("imagem rotacionada em 180");
-    				file=clImg.rotate(file,180);
+    				file=ImageProcessing.rotate(file,180);
     				break;
     			case "-90":
     				System.out.println("imagem rotacionada em -90");
-    				file=clImg.rotate(file,-90);
+    				file=ImageProcessing.rotate(file,-90);
     				break;
     			default:
     				throw e;
     			}
-    		}finally{
+    		}finally{    			
     			clImg=new ImageProcessing(file);
     			reg=clImg.regionProps();
     			pontosRef=procurar3pontos(clImg);
     		}
+
     		boolean[][] m = clImg.m;
     		
     		String qr=lerQr(file, pontosRef, clImg.width);
@@ -453,52 +454,87 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     	 * @param pontosRef usado para localizar o qr
     	 * @param rWidth width da imagem reduzida. é mais consistente que o tamanho da imagem
     	 * @return
+    	 * @throws IOException 
     	 */
     	private String lerQr(BufferedImage file, List<Region> pontosRef, int rWidth){
     		//long startTime = System.nanoTime();
-    		int width=file.getWidth();
+    		float prop=file.getWidth()/rWidth;
     		
-    		String result="";
-    		
-    		BufferedImage small=file.getSubimage((pontosRef.get(1).centrox+20)*width/rWidth, (pontosRef.get(1).centroy)*width/rWidth, 100*width/rWidth, 100*width/rWidth);
-    		
-    		//cria imagem em branco e preto para ajudar o leitor de qr
-    		ImageProcessing tmp=new ImageProcessing(small);
-    		tmp.createMatrix();
-    		small=tmp.matrix2img(tmp.m);
-    		//
-    		
-    		LuminanceSource source = new BufferedImageLuminanceSource(small);
-    		BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
+    		String result=null;
     		QRCodeReader reader=new QRCodeReader();
-    		
     		Map<DecodeHintType,Object> tmpHintsMap = new EnumMap<DecodeHintType, Object>(DecodeHintType.class);
             tmpHintsMap.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
-            
-    		try{
-    			result=reader.decode(bitmap,tmpHintsMap).getText();
-    		}catch (Exception e) {
+    		
+    		
+    		int cnt=0;
+    		BufferedImage qrImage=file.getSubimage((int)((pontosRef.get(1).centrox+35)*prop), (int)((pontosRef.get(1).centroy+15)*prop), (int)(100*prop), (int)(100*prop));
+    		BufferedImage small=qrImage.getSubimage(0, 0, qrImage.getWidth(), qrImage.getHeight());
+    		while(result==null){
+    			BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(small)));
     			try{
-    				int cnt=0;
-	    			File outputfile = new File("/home/samuelkato/qrZoado-"+(cnt)+".png");
-	    			while(outputfile.exists()){
-	    				outputfile = new File("/home/samuelkato/qrZoado-"+(++cnt)+".png");
-	    			}
-	    		    ImageIO.write(small, "png", outputfile);
-	    		    
-	    		    File fileSaida=new File("/home/samuelkato/qrZoado-"+(cnt)+".txt");
-					if (!fileSaida.exists())fileSaida.createNewFile();
-					
-					FileWriter fw = new FileWriter(fileSaida.getAbsoluteFile());
-					BufferedWriter bw = new BufferedWriter(fw);
-					
-					bw.write(bitmap.toString());
-					bw.close();
-					throw new Error("aff");
-    			}catch(Exception e2){
-    				System.out.println(e2.getMessage());
+    				result=reader.decode(bitmap,tmpHintsMap).getText();
+    			}catch(Exception e){
+    				if(cnt==0){
+    					System.out.println("qr preto e branco");
+    					ImageProcessing tmp=new ImageProcessing(qrImage);
+    	        		tmp.createMatrix();
+    	        		small=tmp.matrix2img(tmp.m);
+    				}else if(cnt==1){
+    					System.out.println("qr preto e branco e redimensionado 100x100");
+    					small=ImageProcessing.criarImagemRedimensionada(small, 100);
+    				}else if(cnt==2){
+    					System.out.println("qr redimensionado 100x100");
+    					small=ImageProcessing.criarImagemRedimensionada(qrImage, 100);
+    				}else if(cnt==3){
+    					System.out.println("redimensionado 100x100 e rotacionado 45");
+    					small=ImageProcessing.criarImagemRedimensionada(small, 45);
+    				}else if(cnt==4){
+    					System.out.println("qr rotacionado 45");
+    					small=ImageProcessing.criarImagemRedimensionada(qrImage, 45);
+    				}else{
+    					result="";
+    				}
+    				cnt++;
     			}
     		}
+    		
+    		
+    		
+    		//small=ImageProcessing.criarImagemRedimensionada(small, 100);
+    		//small=ImageProcessing.rotate(small, 45);
+    		/*
+    		BufferedImage small=null;
+    		try{
+    			small=ImageIO.read(new File("/home/samuelkato/qrZoado-10.png"));
+    		}catch(Exception e){
+    			e.printStackTrace();
+    		}*/
+
+    		
+    		
+    		
+            
+
+			/*try{
+				int cnt=0;
+    			File outputfile = new File("/home/samuelkato/qrZoado-"+(cnt)+".png");
+    			while(outputfile.exists()){
+    				outputfile = new File("/home/samuelkato/qrZoado-"+(++cnt)+".png");
+    			}
+    		    ImageIO.write(small, "png", outputfile);
+    		    
+    		    File fileSaida=new File("/home/samuelkato/qrZoado-"+(cnt)+".txt");
+				if (!fileSaida.exists())fileSaida.createNewFile();
+				
+				FileWriter fw = new FileWriter(fileSaida.getAbsoluteFile());
+				BufferedWriter bw = new BufferedWriter(fw);
+				
+				bw.write(bitmap.toString());
+				bw.close();
+				//throw new Error("aff");
+			}catch(Exception e3){
+				System.out.println(e2.getMessage());
+			}*/
     		
     		//System.out.println((System.nanoTime()-startTime)/1000000000);
     		return result;
@@ -559,31 +595,32 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		}
     		return (float)cnt/60;
     	}
-    }
-    /**
-     * Ordena vector de Region
-     * por campo
-     * asc(1) ou desc(-1)
-     * 
-     * @author samuelkato
-     *
-     */
-	class Sorter implements Comparator<Region>{
-		private String chave;
-		private int order=1;
-		public Sorter(String chave,int order){
-			this.chave=chave;
-			this.order*=order;
+    
+	    /**
+	     * Ordena vector de Region
+	     * por campo
+	     * asc(1) ou desc(-1)
+	     * 
+	     * @author samuelkato
+	     *
+	     */
+		class Sorter implements Comparator<Region>{
+			private String chave;
+			private int order=1;
+			public Sorter(String chave,int order){
+				this.chave=chave;
+				this.order*=order;
+			}
+			@Override
+			public int compare(Region o1,Region o2) {
+				int retPri=-1*this.order;
+				int retSec=1*this.order;
+				if(o1.clock_ && !o2.clock_)return -1;
+				else if(!o1.clock_ && o2.clock_)return 1;
+				else if(o1.getFieldInt(this.chave)>o2.getFieldInt(this.chave))return retSec;
+				else if(o1.getFieldInt(this.chave)==o2.getFieldInt(this.chave))return 0;
+				else return retPri;
+			}	
 		}
-		@Override
-		public int compare(Region o1,Region o2) {
-			int retPri=-1*this.order;
-			int retSec=1*this.order;
-			if(o1.clock_ && !o2.clock_)return -1;
-			else if(!o1.clock_ && o2.clock_)return 1;
-			else if(o1.getFieldInt(this.chave)>o2.getFieldInt(this.chave))return retSec;
-			else if(o1.getFieldInt(this.chave)==o2.getFieldInt(this.chave))return 0;
-			else return retPri;
-		}	
-	}
+    }
 }
