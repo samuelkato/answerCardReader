@@ -25,7 +25,7 @@ public class Generator {
 			Hashtable<EncodeHintType,ErrorCorrectionLevel> hints = new Hashtable<EncodeHintType,ErrorCorrectionLevel>();
 			hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H);
 			//EncodeHintType.ERROR_CORRECTION -> ErrorCorrectionLevel.H
-			matrix = writer.encode(data, com.google.zxing.BarcodeFormat.QR_CODE, 100, 100, hints);
+			matrix = writer.encode(data, com.google.zxing.BarcodeFormat.QR_CODE, 150, 150, hints);
 		}
 		catch (com.google.zxing.WriterException e) {
 		 //exit the method
