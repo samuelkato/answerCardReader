@@ -160,8 +160,8 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 				taskOutput.append("Json gravado com sucesso em: "+fileSaida.getAbsolutePath()+"\n\n");
 				System.out.println("Json gravado com sucesso em: "+fileSaida.getAbsolutePath()+"\n");
 			} catch (IOException e) {
-				taskOutput.append("Erro ao grava o arquivo "+fileSaida.getAbsolutePath()+"\n\n");
-				System.out.println("Erro ao grava o arquivo "+fileSaida.getAbsolutePath()+"\n");
+				taskOutput.append("Erro ao gravar o arquivo "+fileSaida.getAbsolutePath()+"\n\n");
+				System.out.println("Erro ao gravar o arquivo "+fileSaida.getAbsolutePath()+"\n");
 			}
             return null;
         }
@@ -248,7 +248,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		boolean[][] m = clImg.m;
     		
     		String qr=lerQr(file, pontosRef, clImg.width);
-    		if(qr==null)throw new Exception("qr code null");
+    		if(qr=="")throw new Exception("qr code null");
     		
     		Region ponto1=pontosRef.get(0);
     		Region ponto2=pontosRef.get(1);
@@ -342,10 +342,14 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     	 * */
     	private List<Region> procurar3pontos(ImageProcessing clImg) throws Exception{
     		//procurar areas brancas delimitadas
+    		
+    		//evitar "furos" nos 3 quadrados delimitantes
+    		clImg.mInv=clImg.erode(clImg.mInv);
+    		
     		int[][] bwInv=clImg.bwlabel(clImg.mInv);
-    		//clImg.saveFilteredImage("/home/samuelkato/tmp1.bmp",clImg.m);
-    		//clImg.saveFilteredImage("/home/samuelkato/tmp1.bmp",clImg.mInv);
-    		//clImg.saveFilteredImage("/home/samuelkato/tmp.bmp",bwInv);
+//    		clImg.saveFilteredImage("/home/samuelkato/tmp1.bmp",clImg.m);
+//    		clImg.saveFilteredImage("/home/samuelkato/tmp2.bmp",clImg.mInv);
+//    		clImg.saveFilteredImage("/home/samuelkato/tmp3.bmp",bwInv);
     		
     		ConfigImageProcessing config=new ConfigImageProcessing();
     		config.minArea=800;
@@ -470,27 +474,59 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		BufferedImage qrImage=file.getSubimage((int)((pontosRef.get(1).centrox+35)*prop), (int)((pontosRef.get(1).centroy+15)*prop), (int)(100*prop), (int)(100*prop));
     		BufferedImage small=qrImage.getSubimage(0, 0, qrImage.getWidth(), qrImage.getHeight());
     		while(result==null){
+    			
     			BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(small)));
+    			
+//    			try{
+//    				int cnt2=0;
+//        			File outputfile = new File("/home/samuelkato/qrZoado-"+(cnt2)+".png");
+//        			while(outputfile.exists()){
+//        				outputfile = new File("/home/samuelkato/qrZoado-"+(++cnt2)+".png");
+//        			}
+//        		    ImageIO.write(small, "png", outputfile);
+//        		    
+//        		    File fileSaida=new File("/home/samuelkato/qrZoado-"+(cnt2)+".txt");
+//    				if (!fileSaida.exists())fileSaida.createNewFile();
+//    				
+//    				FileWriter fw = new FileWriter(fileSaida.getAbsoluteFile());
+//    				BufferedWriter bw = new BufferedWriter(fw);
+//    				
+//    				bw.write(bitmap.toString());
+//    				bw.close();
+//    				
+//    			}catch(Exception e3){
+//    				System.out.println(e3.getMessage());
+//    			}
+    			
+    			class configThresh extends ConfigImageProcessing{
+    				public boolean checkThreshold(int r, int g, int b, int rAvg, int gAvg, int bAvg){
+    					return r + g + b < (rAvg + gAvg + bAvg - 50);
+    				}
+    			}
+    			
     			try{
     				result=reader.decode(bitmap,tmpHintsMap).getText();
     			}catch(Exception e){
     				if(cnt==0){
     					System.out.println("qr preto e branco");
     					ImageProcessing tmp=new ImageProcessing(qrImage);
-    	        		tmp.createMatrix();
+    	        		tmp.createMatrix(new configThresh());
     	        		small=tmp.matrix2img(tmp.m);
     				}else if(cnt==1){
     					System.out.println("qr preto e branco e redimensionado 100x100");
     					small=ImageProcessing.criarImagemRedimensionada(small, 100);
     				}else if(cnt==2){
+    					System.out.println("qr preto e branco, redimensionado 100x100 e rotacionado 45");
+    					small=ImageProcessing.rotate(small, 45);
+    				}else if(cnt==3){
     					System.out.println("qr redimensionado 100x100");
     					small=ImageProcessing.criarImagemRedimensionada(qrImage, 100);
-    				}else if(cnt==3){
-    					System.out.println("redimensionado 100x100 e rotacionado 45");
-    					small=ImageProcessing.criarImagemRedimensionada(small, 45);
     				}else if(cnt==4){
+    					System.out.println("redimensionado 100x100 e rotacionado 45");
+    					small=ImageProcessing.rotate(small, 45);
+    				}else if(cnt==5){
     					System.out.println("qr rotacionado 45");
-    					small=ImageProcessing.criarImagemRedimensionada(qrImage, 45);
+    					small=ImageProcessing.rotate(qrImage, 45);
     				}else{
     					result="";
     				}
@@ -515,26 +551,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		
             
 
-			/*try{
-				int cnt=0;
-    			File outputfile = new File("/home/samuelkato/qrZoado-"+(cnt)+".png");
-    			while(outputfile.exists()){
-    				outputfile = new File("/home/samuelkato/qrZoado-"+(++cnt)+".png");
-    			}
-    		    ImageIO.write(small, "png", outputfile);
-    		    
-    		    File fileSaida=new File("/home/samuelkato/qrZoado-"+(cnt)+".txt");
-				if (!fileSaida.exists())fileSaida.createNewFile();
-				
-				FileWriter fw = new FileWriter(fileSaida.getAbsoluteFile());
-				BufferedWriter bw = new BufferedWriter(fw);
-				
-				bw.write(bitmap.toString());
-				bw.close();
-				//throw new Error("aff");
-			}catch(Exception e3){
-				System.out.println(e2.getMessage());
-			}*/
+			
     		
     		//System.out.println((System.nanoTime()-startTime)/1000000000);
     		return result;
