@@ -278,7 +278,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		Collections.sort(col1,new Sorter("centroy",1));
     		Collections.sort(col2,new Sorter("centroy",1));
     		
-    		/*
+    		
     		for(int i=0; i<Math.min(col1.size(), col2.size()); i+=1){
     			Region p1=col1.get(i);
     			Region p2=col2.get(i);
@@ -289,7 +289,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		if(col1.size()!=col2.size()){
     			throw new Exception("tamanho da coluna dos clocks invalido col1:"+col1.size()+" col2:"+col2.size());
     		}
-    		*/
+    		
     		
     		
     		//check number of questions
@@ -319,6 +319,8 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     				}
     			}
     		}
+    		clImg.saveFilteredImage("/home/samuelkato/tmp1.bmp",m);
+    		
     		String saida="{\"qr\":\""+qr+"\",\"questoes\":[";
     		for (int i=0;i<col1.size()*4;i++) {
     			String alts="";
@@ -352,9 +354,11 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 //    		clImg.saveFilteredImage("/home/samuelkato/tmp3.bmp",bwInv);
     		
     		ConfigImageProcessing config=new ConfigImageProcessing();
-    		config.minArea=800;
+    		config.minArea=700;
     		config.maxArea=1800;
     		List<Region> regInv=clImg.filterRegions(clImg.regionProps(bwInv),config);
+    		
+    		if(regInv.size()<3)throw new Exception("Erro: 3 pontos não encontrados");
     		
     		List<Region> ret=new Vector<Region>();
     
@@ -395,6 +399,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     			}
     		}
     		
+    		
     		/*
     		(2|3)
     		-----
@@ -407,12 +412,15 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		Region p3=regInv.get(max[2][0]);//supdir
     		Region p4=regInv.get(max[3][0]);//infdir
     		
+    		
+    		
     		boolean ok1,ok2,ok3,ok4;
     		
     		ok1=(p1.centrox < maxx/2) && (p1.centroy > maxy/2);//infesq
     		ok2=(p2.centrox < maxx/2) && (p2.centroy < maxy/2);//supesq
     		ok3=(p3.centrox > maxx/2) && (p3.centroy < maxy/2);//supdir
     		ok4=(p4.centrox > maxx/2) && (p4.centroy > maxy/2);//infdir
+    		
     		
     		
     		if(ok1 && ok2 && ok3 && !ok4){//correto
@@ -428,6 +436,10 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		}else{
     			throw new Exception("Erro: 3 pontos não encontrados");
     		}
+    		
+    		
+    		
+    		
     		
     		if(!check3pontos(ret)){
     			throw new Exception("Erro: 3 pontos não são perpendiculares");
@@ -471,7 +483,8 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		
     		
     		int cnt=0;
-    		BufferedImage qrImage=file.getSubimage((int)((pontosRef.get(1).centrox+35)*prop), (int)((pontosRef.get(1).centroy+15)*prop), (int)(100*prop), (int)(100*prop));
+    		BufferedImage qrImage=file.getSubimage((int)((pontosRef.get(1).centrox+115)*prop), (int)((pontosRef.get(1).centroy-130)*prop), (int)(140*prop), (int)(140*prop));
+    		//clone
     		BufferedImage small=qrImage.getSubimage(0, 0, qrImage.getWidth(), qrImage.getHeight());
     		while(result==null){
     			
@@ -605,12 +618,14 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     	 */
 		private float conferirMarcacao(int x,int y, boolean[][] m){
     		int cnt=0;
-    		for(int i=x-5;i<x+5;i++){
-    			for(int j=y-3;j<y+3;j++){
+    		x+=1;//o x estah um pouco à esquerda
+    		for(int i=x-4;i<x+5;i++){
+    			for(int j=y-2;j<y+3;j++){
     				if(m[j][i])cnt++;
+    				else m[j][i]=true;
     			}
     		}
-    		return (float)cnt/60;
+    		return (float)cnt/45;
     	}
     
 	    /**
@@ -637,7 +652,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 				else if(o1.getFieldInt(this.chave)>o2.getFieldInt(this.chave))return retSec;
 				else if(o1.getFieldInt(this.chave)==o2.getFieldInt(this.chave))return 0;
 				else return retPri;
-			}	
+			}
 		}
     }
 }
