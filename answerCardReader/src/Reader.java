@@ -319,7 +319,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     				}
     			}
     		}
-    		clImg.saveFilteredImage("/home/samuelkato/tmp1.bmp",m);
+    		//clImg.saveFilteredImage("/home/samuelkato/tmp1.bmp",m);
     		
     		String saida="{\"qr\":\""+qr+"\",\"questoes\":[";
     		for (int i=0;i<col1.size()*4;i++) {
@@ -549,17 +549,6 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		
     		
     		
-    		//small=ImageProcessing.criarImagemRedimensionada(small, 100);
-    		//small=ImageProcessing.rotate(small, 45);
-    		/*
-    		BufferedImage small=null;
-    		try{
-    			small=ImageIO.read(new File("/home/samuelkato/qrZoado-10.png"));
-    		}catch(Exception e){
-    			e.printStackTrace();
-    		}*/
-
-    		
     		
     		
             
@@ -622,7 +611,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		for(int i=x-4;i<x+5;i++){
     			for(int j=y-2;j<y+3;j++){
     				if(m[j][i])cnt++;
-    				else m[j][i]=true;
+    				//else m[j][i]=true;
     			}
     		}
     		return (float)cnt/45;
