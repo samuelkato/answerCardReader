@@ -279,12 +279,12 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		Collections.sort(col2,new Sorter("centroy",1));
     		
     		
-    		for(int i=0; i<Math.min(col1.size(), col2.size()); i+=1){
-    			Region p1=col1.get(i);
-    			Region p2=col2.get(i);
-    			System.out.println(p1.centrox+":"+p1.centroy+" "+p2.centrox+":"+p2.centroy);
-    		}
-    		System.out.println("");
+//    		for(int i=0; i<Math.min(col1.size(), col2.size()); i+=1){
+//    			Region p1=col1.get(i);
+//    			Region p2=col2.get(i);
+//    			System.out.println(p1.centrox+":"+p1.centroy+" "+p2.centrox+":"+p2.centroy);
+//    		}
+//    		System.out.println("");
     		
     		if(col1.size()!=col2.size()){
     			throw new Exception("tamanho da coluna dos clocks invalido col1:"+col1.size()+" col2:"+col2.size());
@@ -359,9 +359,9 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		List<Region> regInv=clImg.filterRegions(clImg.regionProps(bwInv),config);
     		
     		if(regInv.size()<3)throw new Exception("Erro: 3 pontos não encontrados");
+    		regInv = busca3pontos(regInv);
     		
     		List<Region> ret=new Vector<Region>();
-    
     		
     		int[][] max = new int[4][2];
     		for(int i=0; i<max.length; i+=1)max[i][1]=-10000000;
@@ -437,15 +437,32 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     			throw new Exception("Erro: 3 pontos não encontrados");
     		}
     		
-    		
-    		
-    		
-    		
-    		if(!check3pontos(ret)){
-    			throw new Exception("Erro: 3 pontos não são perpendiculares");
-    		}
-    		
     		return ret;
+    	}
+    	
+    	private List<Region> busca3pontos(List<Region> variosPontos){
+    		int len=variosPontos.size();
+    		int i=1*len+1; //011 na base len
+    		int max=(len-1)*len*len+(len-2)*len+len-3;//valor maximo de i
+    		
+    		do{
+    			i++;
+    			String a = Integer.toString(i, len);
+    			while(a.length()<3)a="0"+a;
+    			int p1=Integer.parseInt(a.substring(0,1));
+    			int p2=Integer.parseInt(a.substring(1,2));
+    			int p3=Integer.parseInt(a.substring(2,3));
+    			if(p1==p2 || p1==p3 || p2==p3)continue;
+    			
+	    		List<Region> pTest=new Vector<Region>();
+	    		pTest.add(variosPontos.get(p1));
+	    		pTest.add(variosPontos.get(p2));
+	    		pTest.add(variosPontos.get(p3));
+	    		if(check3pontos(pTest)){
+	    			return pTest;
+	    		}
+    		}while(i<=max);
+    		return null;
     	}
     	
     	/**
@@ -458,8 +475,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		
     		double a=-(double)(ponto1.centrox-ponto2.centrox)/(double)(ponto1.centroy-ponto2.centroy);
     		double a2=(double)(ponto3.centroy-ponto2.centroy)/(double)(ponto3.centrox-ponto2.centrox);
-    		
-    		return !(a<a2-0.1 || a>a2+0.1);
+    		return !(a<a2-0.01 || a>a2+0.01);
     	}
     	
     	
@@ -483,7 +499,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		
     		
     		int cnt=0;
-    		BufferedImage qrImage=file.getSubimage((int)((pontosRef.get(1).centrox+115)*prop), (int)((pontosRef.get(1).centroy-130)*prop), (int)(140*prop), (int)(140*prop));
+    		BufferedImage qrImage=file.getSubimage((int)((pontosRef.get(1).centrox+115)*prop), (int)((pontosRef.get(1).centroy-130)*prop), (int)(160*prop), (int)(160*prop));
     		//clone
     		BufferedImage small=qrImage.getSubimage(0, 0, qrImage.getWidth(), qrImage.getHeight());
     		while(result==null){
@@ -510,7 +526,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 //    			}catch(Exception e3){
 //    				System.out.println(e3.getMessage());
 //    			}
-    			
+//    			
     			class configThresh extends ConfigImageProcessing{
     				public boolean checkThreshold(int r, int g, int b, int rAvg, int gAvg, int bAvg){
     					return r + g + b < (rAvg + gAvg + bAvg - 50);
@@ -546,14 +562,6 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     				cnt++;
     			}
     		}
-    		
-    		
-    		
-    		
-    		
-            
-
-			
     		
     		//System.out.println((System.nanoTime()-startTime)/1000000000);
     		return result;
