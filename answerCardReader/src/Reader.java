@@ -253,7 +253,8 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		Region ponto1=pontosRef.get(0);
     		Region ponto2=pontosRef.get(1);
     		Region ponto3=pontosRef.get(2);
-    		
+//    		int centrox4=ponto3.centrox+ponto1.centrox-ponto2.centrox;
+    		int centroy4=ponto3.centroy+ponto1.centroy-ponto2.centroy;
     		//gerarPontosCartao(pontosRef,reg,23);//prova de tatui impressa sem clocks
     		
     		List<Region> col1=new Vector<Region>();
@@ -269,9 +270,25 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     			int xAt=reg.get(i).centrox;
     			int x=(int)(yAt*a+b);
     			int x2=(int)(yAt*a+b2);
-    			if(x+5>xAt && x-5<xAt && yAt>ponto2.centroy+20 && yAt<ponto1.centroy-20){//coluna1
+    			
+    			if(
+    					x+5>xAt &&
+    					x-5<xAt &&
+    					yAt>ponto2.centroy+20 &&
+    					yAt<ponto1.centroy-20 &&
+    					
+    					yAt > ponto2.centroy + 20 &&
+    					yAt < ponto1.centroy - 20
+    			){//coluna1
     				col1.add(reg.remove(i--));
-    			}else if(x2+5>xAt && x2-5<xAt && yAt>ponto3.centroy+20){//coluna2
+    			}else if(
+    					x2+5>xAt &&
+    					x2-5<xAt &&
+    					yAt>ponto3.centroy+20 &&
+    					
+    					yAt > ponto3.centroy + 20 &&
+    					yAt < centroy4 - 20
+    			){//coluna2
     				col2.add(reg.remove(i--));
     			}
     		}
@@ -279,17 +296,27 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		Collections.sort(col2,new Sorter("centroy",1));
     		
     		
-//    		for(int i=0; i<Math.min(col1.size(), col2.size()); i+=1){
-//    			Region p1=col1.get(i);
-//    			Region p2=col2.get(i);
-//    			System.out.println(p1.centrox+":"+p1.centroy+" "+p2.centrox+":"+p2.centroy);
-//    		}
-//    		System.out.println("");
-    		
     		if(col1.size()!=col2.size()){
+    			for(int i=0; i<Math.max(col1.size(), col2.size()); i+=1){
+        			Region p1=null;
+        			try{
+        				p1=col1.get(i);
+        			}catch(Exception e){}
+        			Region p2=null;
+        			try{
+        				p2=col2.get(i);
+        			}catch(Exception e){}
+        			if(p1!=null && p2!=null){
+        				System.out.println(p1.centrox+":"+p1.centroy+":"+p1.area+" "+p2.centrox+":"+p2.centroy+":"+p2.area);
+        			}else if(p2!=null){
+        				System.out.println("-:-:- "+p2.centrox+":"+p2.centroy+":"+p2.area);
+        			}else if(p1!=null){
+        				System.out.println(p1.centrox+":"+p1.centroy+":"+p1.area+" -:-:-");
+        			}
+        		}
     			throw new Exception("tamanho da coluna dos clocks invalido col1:"+col1.size()+" col2:"+col2.size());
     		}
-    		
+    		System.out.println("");
     		
     		
     		//check number of questions
@@ -445,6 +472,8 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		int i=1*len+1; //011 na base len
     		int max=(len-1)*len*len+(len-2)*len+len-3;//valor maximo de i
     		
+    		List<List<Region>> ret=new Vector<List<Region>>();
+    		
     		do{
     			i++;
     			String a = Integer.toString(i, len);
@@ -459,9 +488,22 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 	    		pTest.add(variosPontos.get(p2));
 	    		pTest.add(variosPontos.get(p3));
 	    		if(check3pontos(pTest)){
-	    			return pTest;
+	    			ret.add(pTest);
 	    		}
     		}while(i<=max);
+    		
+    		int retInd=-1;
+    		int maxDistx=0;//distancia x entre p2 e p3
+    		for(int j=0; j<ret.size(); j++){
+    			List<Region> pAt=ret.get(j);
+    			int distX=Math.abs(pAt.get(1).centrox-pAt.get(2).centrox);
+    			if(maxDistx<distX){
+    				maxDistx=distX;
+    				retInd=j;
+    			}
+    		}
+    		if(retInd>=0)return ret.get(retInd);
+    		
     		return null;
     	}
     	
@@ -474,8 +516,9 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		Region ponto3=pontosRef.get(2);
     		
     		double a=-(double)(ponto1.centrox-ponto2.centrox)/(double)(ponto1.centroy-ponto2.centroy);
-    		double a2=(double)(ponto3.centroy-ponto2.centroy)/(double)(ponto3.centrox-ponto2.centrox);
-    		return !(a<a2-0.01 || a>a2+0.01);
+    		double a2=(double)(ponto2.centroy-ponto3.centroy)/(double)(ponto2.centrox-ponto3.centrox);
+    		
+    		return Math.abs(a2-a)<0.01;
     	}
     	
     	
@@ -502,6 +545,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		BufferedImage qrImage=file.getSubimage((int)((pontosRef.get(1).centrox+115)*prop), (int)((pontosRef.get(1).centroy-130)*prop), (int)(160*prop), (int)(160*prop));
     		//clone
     		BufferedImage small=qrImage.getSubimage(0, 0, qrImage.getWidth(), qrImage.getHeight());
+    		BufferedImage bwImg=null;
     		while(result==null){
     			
     			BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(small)));
@@ -526,7 +570,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 //    			}catch(Exception e3){
 //    				System.out.println(e3.getMessage());
 //    			}
-//    			
+    			
     			class configThresh extends ConfigImageProcessing{
     				public boolean checkThreshold(int r, int g, int b, int rAvg, int gAvg, int bAvg){
     					return r + g + b < (rAvg + gAvg + bAvg - 50);
@@ -541,19 +585,32 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     					ImageProcessing tmp=new ImageProcessing(qrImage);
     	        		tmp.createMatrix(new configThresh());
     	        		small=tmp.matrix2img(tmp.m);
+    	        		bwImg=small.getSubimage(0, 0, small.getWidth(), small.getHeight());
     				}else if(cnt==1){
-    					System.out.println("qr preto e branco e redimensionado 100x100");
-    					small=ImageProcessing.criarImagemRedimensionada(small, 100);
+    					System.out.println("-redimensionado 200x200");
+    					small=ImageProcessing.criarImagemRedimensionada(small, 200);
     				}else if(cnt==2){
-    					System.out.println("qr preto e branco, redimensionado 100x100 e rotacionado 45");
-    					small=ImageProcessing.rotate(small, 45);
+    					System.out.println("-rotacionado 30");
+    					small=ImageProcessing.rotate(small, 30);
     				}else if(cnt==3){
-    					System.out.println("qr redimensionado 100x100");
-    					small=ImageProcessing.criarImagemRedimensionada(qrImage, 100);
+    					System.out.println("-100x100");
+    					small=ImageProcessing.criarImagemRedimensionada(small, 100);
     				}else if(cnt==4){
-    					System.out.println("redimensionado 100x100 e rotacionado 45");
+    					System.out.println("-rotacionado 45");
     					small=ImageProcessing.rotate(small, 45);
     				}else if(cnt==5){
+    					System.out.println("qr preto e branco e redimensionado 100x100");
+    					small=ImageProcessing.criarImagemRedimensionada(bwImg, 100);
+    				}else if(cnt==6){
+    					System.out.println("-rotacionado 45");
+    					small=ImageProcessing.rotate(small, 45);
+    				}else if(cnt==7){
+    					System.out.println("qr redimensionado 100x100");
+    					small=ImageProcessing.criarImagemRedimensionada(qrImage, 100);
+    				}else if(cnt==8){
+    					System.out.println("redimensionado 100x100 e rotacionado 45");
+    					small=ImageProcessing.rotate(small, 45);
+    				}else if(cnt==9){
     					System.out.println("qr rotacionado 45");
     					small=ImageProcessing.rotate(qrImage, 45);
     				}else{
