@@ -258,7 +258,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		//gerarPontosCartao(pontosRef,reg,23);//prova de tatui impressa sem clocks
     		
     		List<Region> col1=new Vector<Region>();
-    		List<Region> col2=new Vector<Region>();
+    		//List<Region> col2=new Vector<Region>();
     		//linha entre ponto1 e ponto2
     		double a=(double)(ponto1.centrox-ponto2.centrox)/(double)(ponto1.centroy-ponto2.centroy);
     		double b=(double)ponto2.centrox-a*(double)ponto2.centroy;
@@ -281,7 +281,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     					yAt < ponto1.centroy - 20
     			){//coluna1
     				col1.add(reg.remove(i--));
-    			}else if(
+    			}/*else if(
     					x2+5>xAt &&
     					x2-5<xAt &&
     					yAt>ponto3.centroy+20 &&
@@ -290,12 +290,12 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     					yAt < centroy4 - 20
     			){//coluna2
     				col2.add(reg.remove(i--));
-    			}
+    			}*/
     		}
     		Collections.sort(col1,new Sorter("centroy",1));
-    		Collections.sort(col2,new Sorter("centroy",1));
+    		//Collections.sort(col2,new Sorter("centroy",1));
     		
-    		
+    		/*
     		if(col1.size()!=col2.size()){
     			for(int i=0; i<Math.max(col1.size(), col2.size()); i+=1){
         			Region p1=null;
@@ -317,17 +317,20 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     			throw new Exception("tamanho da coluna dos clocks invalido col1:"+col1.size()+" col2:"+col2.size());
     		}
     		System.out.println("");
-    		
+    		*/
     		
     		//check number of questions
     		Hashtable<Integer,List<String>> resp=new Hashtable<Integer,List<String>>();
+    		
+    		double aClock=(double)(ponto3.centroy - ponto2.centroy)/(double)(ponto3.centrox - ponto2.centrox);
+    		double clockDistX=((double)(ponto3.centrox - ponto2.centrox))/25;
+    		
     		for(int i=0;i<col1.size();i++){
     			Region clock1=col1.get(i);
-    			Region clock2=col2.get(i);
+    			//Region clock2=col2.get(i);
     			//int distx=clock2.centrox-clock1.centrox;
-    			double aClock=(double)(clock2.centroy-clock1.centroy)/(double)(clock2.centrox-clock1.centrox);
     			double bClock=(double)clock1.centroy-aClock*(double)clock1.centrox;
-    			double clockDistX=((double)(clock2.centrox-clock1.centrox))/25;
+    			
     			for(int j=1;j<25;j++){
     				if((j-1)%6==0)continue;
     				
