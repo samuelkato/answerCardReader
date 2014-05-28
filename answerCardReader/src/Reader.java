@@ -44,7 +44,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
         javax.swing.SwingUtilities.invokeLater(new Runnable() {
             public void run() {
             	//Create and set up the window.
-                JFrame frame = new JFrame("Ler Folha Resposta v2");
+                JFrame frame = new JFrame("Ler Folha Resposta v3");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
          
                 //Create and set up the content pane.
@@ -253,23 +253,17 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		Region ponto1=pontosRef.get(0);
     		Region ponto2=pontosRef.get(1);
     		Region ponto3=pontosRef.get(2);
-//    		int centrox4=ponto3.centrox+ponto1.centrox-ponto2.centrox;
-    		int centroy4=ponto3.centroy+ponto1.centroy-ponto2.centroy;
-    		//gerarPontosCartao(pontosRef,reg,23);//prova de tatui impressa sem clocks
     		
     		List<Region> col1=new Vector<Region>();
-    		//List<Region> col2=new Vector<Region>();
     		//linha entre ponto1 e ponto2
     		double a=(double)(ponto1.centrox-ponto2.centrox)/(double)(ponto1.centroy-ponto2.centroy);
     		double b=(double)ponto2.centrox-a*(double)ponto2.centroy;
-    		double b2=(double)ponto3.centrox-a*(double)ponto3.centroy;
     		for(int i=0;i<reg.size();i++){
     			if(reg.get(i).area < 30 || reg.get(i).area>200)continue;
     			
     			int yAt=reg.get(i).centroy;
     			int xAt=reg.get(i).centrox;
     			int x=(int)(yAt*a+b);
-    			int x2=(int)(yAt*a+b2);
     			
     			if(
     					x+5>xAt &&
@@ -281,43 +275,9 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     					yAt < ponto1.centroy - 20
     			){//coluna1
     				col1.add(reg.remove(i--));
-    			}/*else if(
-    					x2+5>xAt &&
-    					x2-5<xAt &&
-    					yAt>ponto3.centroy+20 &&
-    					
-    					yAt > ponto3.centroy + 20 &&
-    					yAt < centroy4 - 20
-    			){//coluna2
-    				col2.add(reg.remove(i--));
-    			}*/
+    			}
     		}
     		Collections.sort(col1,new Sorter("centroy",1));
-    		//Collections.sort(col2,new Sorter("centroy",1));
-    		
-    		/*
-    		if(col1.size()!=col2.size()){
-    			for(int i=0; i<Math.max(col1.size(), col2.size()); i+=1){
-        			Region p1=null;
-        			try{
-        				p1=col1.get(i);
-        			}catch(Exception e){}
-        			Region p2=null;
-        			try{
-        				p2=col2.get(i);
-        			}catch(Exception e){}
-        			if(p1!=null && p2!=null){
-        				System.out.println(p1.centrox+":"+p1.centroy+":"+p1.area+" "+p2.centrox+":"+p2.centroy+":"+p2.area);
-        			}else if(p2!=null){
-        				System.out.println("-:-:- "+p2.centrox+":"+p2.centroy+":"+p2.area);
-        			}else if(p1!=null){
-        				System.out.println(p1.centrox+":"+p1.centroy+":"+p1.area+" -:-:-");
-        			}
-        		}
-    			throw new Exception("tamanho da coluna dos clocks invalido col1:"+col1.size()+" col2:"+col2.size());
-    		}
-    		System.out.println("");
-    		*/
     		
     		//check number of questions
     		Hashtable<Integer,List<String>> resp=new Hashtable<Integer,List<String>>();
@@ -327,8 +287,6 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		
     		for(int i=0;i<col1.size();i++){
     			Region clock1=col1.get(i);
-    			//Region clock2=col2.get(i);
-    			//int distx=clock2.centrox-clock1.centrox;
     			double bClock=(double)clock1.centroy-aClock*(double)clock1.centrox;
     			
     			for(int j=1;j<25;j++){
@@ -349,7 +307,6 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     				}
     			}
     		}
-    		//clImg.saveFilteredImage("/home/samuelkato/tmp1.bmp",m);
     		
     		String saida="{\"qr\":\""+qr+"\",\"questoes\":[";
     		for (int i=0;i<col1.size()*4;i++) {
