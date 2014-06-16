@@ -412,7 +412,7 @@ class ConfigImageProcessing{
 	//false => branco
 	public boolean checkThreshold(int r, int g, int b, int rAvg, int gAvg, int bAvg){
 		//return !(r>g+20 && r>b+20) && r+g+b800;
-		return r+g+b<rAvg+gAvg+bAvg-80 && !(r>g+10 && r>b+10 && r>150);
+		return r+g+b<rAvg+gAvg+bAvg-80 && !(r>g+10 && r>b+10 && r>150) && !(r>200 || g>200);
 		//return !(r+g+b>700 || r>180);
 	}
 	public boolean checkRegion(Region regAt){
