@@ -44,7 +44,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
         javax.swing.SwingUtilities.invokeLater(new Runnable() {
             public void run() {
             	//Create and set up the window.
-                JFrame frame = new JFrame("Ler Folha Resposta v3");
+                JFrame frame = new JFrame("Ler Folha Resposta v4");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
          
                 //Create and set up the content pane.
@@ -333,22 +333,41 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		//procurar areas brancas delimitadas
     		
     		//evitar "furos" nos 3 quadrados delimitantes
-    		clImg.mInv=clImg.erode(clImg.mInv);
+    		//clImg.mInv=clImg.erode(clImg.mInv);
     		
-    		int[][] bwInv=clImg.bwlabel(clImg.mInv);
+    		int[][] bw = clImg.bwlabel(clImg.m);
 //    		clImg.saveFilteredImage("/home/samuelkato/tmp1.bmp",clImg.m);
 //    		clImg.saveFilteredImage("/home/samuelkato/tmp2.bmp",clImg.mInv);
 //    		clImg.saveFilteredImage("/home/samuelkato/tmp3.bmp",bwInv);
     		
     		ConfigImageProcessing config=new ConfigImageProcessing();
-    		config.minArea=700;
-    		config.maxArea=1800;
-    		List<Region> regInv=clImg.filterRegions(clImg.regionProps(bwInv),config);
+    		config.minArea=200;
+    		config.maxArea=400;
+    		List<Region> regOut=clImg.filterRegions(clImg.regionProps(bw),config);
+    		config.minArea=500;
+    		config.maxArea=700;
+    		List<Region> regIn=clImg.filterRegions(clImg.regionProps(bw),config);
+
+    		List<Region> regInv=new Vector<Region>();
+    		
+    		for(int i=0; i<regIn.size(); i++){
+    			for(int j=0; j<regOut.size(); j++){
+    				int folga=3;
+    				int xout=regOut.get(j).centrox;
+    				int yout=regOut.get(j).centroy;
+    				int xin=regIn.get(i).centrox;
+    				int yin=regIn.get(i).centroy;
+    				if(xout-folga <= xin && xout+folga >= xin && yout-folga <= yin && yout+folga >= yin){
+    					regInv.add(regIn.get(i));
+    				}
+    			}
+    		}
     		
     		if(regInv.size()<3)throw new Exception("Erro: 3 pontos não encontrados");
     		regInv = busca3pontos(regInv);
     		
     		List<Region> ret=new Vector<Region>();
+    		System.out.println(regInv+"\nfim\n");
     		
     		int[][] max = new int[4][2];
     		for(int i=0; i<max.length; i+=1)max[i][1]=-10000000;
@@ -502,7 +521,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		
     		
     		int cnt=0;
-    		BufferedImage qrImage=file.getSubimage((int)((pontosRef.get(1).centrox+115)*prop), (int)((pontosRef.get(1).centroy-130)*prop), (int)(160*prop), (int)(160*prop));
+    		BufferedImage qrImage=file.getSubimage((int)((pontosRef.get(1).centrox+185)*prop), (int)((pontosRef.get(1).centroy-130)*prop), (int)(160*prop), (int)(160*prop));
     		//clone
     		BufferedImage small=qrImage.getSubimage(0, 0, qrImage.getWidth(), qrImage.getHeight());
     		BufferedImage bwImg=null;
@@ -533,7 +552,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     			
     			class configThresh extends ConfigImageProcessing{
     				public boolean checkThreshold(int r, int g, int b, int rAvg, int gAvg, int bAvg){
-    					return r + g + b < (rAvg + gAvg + bAvg - 50);
+    					return r + g + b < (rAvg + gAvg + bAvg - 50) && !(r>g+10 && r>b+10 && r>150);
     				}
     			}
     			
