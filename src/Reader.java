@@ -363,11 +363,11 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     			}
     		}
     		
-    		if(regInv.size()<3)throw new Exception("Erro: 3 pontos não encontrados");
+    		if(regInv.size()<3)throw new Exception("Erro: 3 pontos não encontrados(area)");
     		regInv = busca3pontos(regInv);
+    		if(regInv==null)throw new Exception("Erro: 3 pontos não encontrados(90)");
     		
     		List<Region> ret=new Vector<Region>();
-    		System.out.println(regInv+"\nfim\n");
     		
     		int[][] max = new int[4][2];
     		for(int i=0; i<max.length; i+=1)max[i][1]=-10000000;
