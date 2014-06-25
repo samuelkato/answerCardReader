@@ -199,7 +199,6 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 					}catch(Exception e){
 						retAt="\"Erro: " + fileEntry.getAbsolutePath() + " nao é imagem.\"";
 					}
-					System.out.println(retAt);
 					taskOutput.append(retAt+"\n");
     			}
     			int progress=(int)Math.floor(((float)++n/a.length)*100);
@@ -246,7 +245,6 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		}
 
     		boolean[][] m = clImg.m;
-    		System.out.println(pontosRef);
     		String qr=lerQr(file, pontosRef, clImg.width);
     		if(qr=="")throw new Exception("qr code null");
     		
@@ -384,7 +382,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		config.minArea=200;
     		config.maxArea=400;
     		List<Region> regOut=clImg.filterRegions(clImg.regionProps(bw),config);
-    		config.minArea=500;
+    		config.minArea=400;
     		config.maxArea=700;
     		List<Region> regIn=clImg.filterRegions(clImg.regionProps(bw),config);
 
@@ -402,6 +400,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     				}
     			}
     		}
+    		
     		if(regInv.size()<3)throw new Exception("Erro: 3 pontos não encontrados (tamanho)");
     		
     		regInv = busca3pontos(regInv);
