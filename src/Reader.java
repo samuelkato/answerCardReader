@@ -7,7 +7,10 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeListener;
 import java.io.*;
+import java.security.MessageDigest;
 import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import java.beans.*;
 
 import javax.imageio.ImageIO;
@@ -118,6 +121,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
      */
     class ProcessaFolder extends SwingWorker<Void, Void> {
     	private File folder;
+    	private ZipOutputStream zipSaida;
     	/**
     	 * contrutora da classe
     	 * 
@@ -142,37 +146,56 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
          */
         @Override
         public Void doInBackground() {
-        	taskOutput.append("Inicio do processamento na pasta: "+this.folder.getAbsolutePath()+"\n");
-			System.out.println("Inicio do processamento na pasta: "+this.folder.getAbsolutePath());
+        	String pastaAt = this.folder.getAbsolutePath();
+        	try{
+        		zipSaida = new ZipOutputStream(new FileOutputStream(pastaAt+"/saida.zip"));
+        	}catch(Exception e){
+        		e.printStackTrace();
+        	}
+        	
+        	taskOutput.append("Inicio do processamento na pasta: "+pastaAt+"\n");
+			System.out.println("Inicio do processamento na pasta: "+pastaAt);
         	String saida="[\n"+listFilesForFolder(this.folder)+"\n]";
-        	taskOutput.append("\nFim da pasta "+this.folder.getAbsolutePath()+"\n");
-			System.out.println("\nFim da pasta "+this.folder.getAbsolutePath()+"\n");
+        	taskOutput.append("\nFim da pasta "+pastaAt+"\n");
+			System.out.println("\nFim da pasta "+pastaAt+"\n");
 			
-			File fileSaida=new File(this.folder.getAbsolutePath()+"/saida.json");
+			
+			//File fileSaida=new File(pastaAt+"/saida.json");
 			try {
-				if (!fileSaida.exists())fileSaida.createNewFile();
+				//if (!fileSaida.exists())fileSaida.createNewFile();
 				
+				zipSaida.putNextEntry(new ZipEntry("saida.json"));
+	    		zipSaida.write(saida.getBytes());
+	    		zipSaida.closeEntry();
+				/*
 				FileWriter fw = new FileWriter(fileSaida.getAbsoluteFile());
 				BufferedWriter bw = new BufferedWriter(fw);
 				
 				bw.write(saida);
 				bw.close();
-				taskOutput.append("Json gravado com sucesso em: "+fileSaida.getAbsolutePath()+"\n\n");
-				System.out.println("Json gravado com sucesso em: "+fileSaida.getAbsolutePath()+"\n");
+				*/
+				//taskOutput.append("Json gravado com sucesso em: "+fileSaida.getAbsolutePath()+"\n\n");
+				//System.out.println("Json gravado com sucesso em: "+fileSaida.getAbsolutePath()+"\n");
 			} catch (IOException e) {
-				taskOutput.append("Erro ao gravar o arquivo "+fileSaida.getAbsolutePath()+"\n\n");
-				System.out.println("Erro ao gravar o arquivo "+fileSaida.getAbsolutePath()+"\n");
+				//taskOutput.append("Erro ao gravar o arquivo "+fileSaida.getAbsolutePath()+"\n\n");
+				//System.out.println("Erro ao gravar o arquivo "+fileSaida.getAbsolutePath()+"\n");
 			}
+			
+			try{
+				zipSaida.close();
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+			
             return null;
         }
- 
+        
         /**
          * processa todos os arquivos de uma pasta
          * ignora pastas. para torna-lo recursivo, descomente o codigo do primeiro if 
          * */
     	private String listFilesForFolder(final File folder) {
     		String saida="";
-    		
     		File[] a=folder.listFiles();
     		int n=0;
     		for (final File fileEntry : a) {
@@ -188,16 +211,18 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 					System.out.println("\nProcessando arquivo "+fileEntry.getAbsolutePath());
 					try{
 						file = ImageIO.read(fileEntry);
-						file.getType();//soh pra levantar uma Exception
-						try {
-							retAt = lerCartao(file);
+						file.getType();//soh pra levantar uma Exception e nao processa o arquivo
+						retAt = lerCartao(file);
+						if(!retAt.equals("")){
 	    					if (!saida.equals(""))saida += ",\n";
 	    					saida += "\t"+retAt;
-	    				}catch (Exception e) {
-	    					retAt = "\"Erro: " + fileEntry.getAbsolutePath() + ": " + e.getMessage() + '"';
-	    				}
+						}
 					}catch(Exception e){
-						retAt="\"Erro: " + fileEntry.getAbsolutePath() + " nao é imagem.\"";
+						if(e.getMessage()=="imagemRepetida"){
+							retAt="\"Erro: uma imagem identica à " + fileEntry.getAbsolutePath() + " ja foi adicionada à saida.\"";
+						}else{
+							retAt="\"Erro: " + fileEntry.getAbsolutePath() + " nao é imagem.\"";
+						}
 					}
 					taskOutput.append(retAt+"\n");
     			}
@@ -209,159 +234,221 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     	
     	/**
     	 * le uma imagem retorna um json com dados do cartao
+    	 * @throws Exception 
     	 * */
     	private String lerCartao(BufferedImage file) throws Exception{
-    		//file=rotate(file,45);
-    		//long startTime = System.nanoTime();
     		ImageProcessing clImg=new ImageProcessing(file);
-    		//m=clImg.erode(m);
-    		//clImg.m=clImg.erode(clImg.m);
-    		//clImg.m=clImg.dilate(clImg.m);
-    		List<Region> reg=clImg.regionProps();
-    		List<Region> pontosRef=null;
+    		String saida="";
+    		Hashtable<String,String> saidaHt=new Hashtable<String,String>(); 
+    		
     		try{
-    			pontosRef=procurar3pontos(clImg);
+	    		//file=rotate(file,45);
+	    		//long startTime = System.nanoTime();
+	    		//m=clImg.erode(m);
+	    		//clImg.m=clImg.erode(clImg.m);
+	    		//clImg.m=clImg.dilate(clImg.m);
+	    		List<Region> reg=clImg.regionProps();
+	    		List<Region> pontosRef=null;
+	    		try{
+	    			pontosRef=procurar3pontos(clImg);
+	    		}catch(Exception e){
+	    			switch(e.getMessage()){
+	    			case "90":
+	    				System.out.println("imagem rotacionada em 90");
+	    				file=ImageProcessing.rotate(file,90);
+	    				break;
+	    			case "180":
+	    				System.out.println("imagem rotacionada em 180");
+	    				file=ImageProcessing.rotate(file,180);
+	    				break;
+	    			case "-90":
+	    				System.out.println("imagem rotacionada em -90");
+	    				file=ImageProcessing.rotate(file,-90);
+	    				break;
+	    			default:
+	    				throw e;
+	    			}
+	    		}finally{
+	    			clImg=new ImageProcessing(file);
+	    			reg=clImg.regionProps();
+	    			pontosRef=procurar3pontos(clImg);
+	    		}
+	
+	    		boolean[][] m = clImg.m;
+	    		String qr=lerQr(file, pontosRef, clImg.width);
+	    		saidaHt.put("qr", "\""+qr+"\"");
+	    		
+	    		System.out.println("qr: "+qr);
+	    		
+	    		Region ponto1=pontosRef.get(0);
+	    		Region ponto2=pontosRef.get(1);
+	    		Region ponto3=pontosRef.get(2);
+	//    		int centrox4=ponto3.centrox+ponto1.centrox-ponto2.centrox;
+	    		int centroy4=ponto3.centroy+ponto1.centroy-ponto2.centroy;
+	    		//gerarPontosCartao(pontosRef,reg,23);//prova de tatui impressa sem clocks
+	    		
+	    		List<Region> col1=new Vector<Region>();
+	    		List<Region> col2=new Vector<Region>();
+	    		//linha entre ponto1 e ponto2
+	    		double a=(double)(ponto1.centrox-ponto2.centrox)/(double)(ponto1.centroy-ponto2.centroy);
+	    		double b=(double)ponto2.centrox-a*(double)ponto2.centroy;
+	    		double b2=(double)ponto3.centrox-a*(double)ponto3.centroy;
+	    		for(int i=0;i<reg.size();i++){
+	    			if(reg.get(i).area < 30 || reg.get(i).area>200)continue;
+	    			
+	    			int yAt=reg.get(i).centroy;
+	    			int xAt=reg.get(i).centrox;
+	    			int x=(int)(yAt*a+b);
+	    			int x2=(int)(yAt*a+b2);
+	    			
+	    			if(
+	    					x+5>xAt &&
+	    					x-5<xAt &&
+	    					yAt>ponto2.centroy+20 &&
+	    					yAt<ponto1.centroy-20 &&
+	    					
+	    					yAt > ponto2.centroy + 20 &&
+	    					yAt < ponto1.centroy - 20
+	    			){//coluna1
+	    				col1.add(reg.remove(i--));
+	    			}else if(
+	    					x2+5>xAt &&
+	    					x2-5<xAt &&
+	    					yAt>ponto3.centroy+20 &&
+	    					
+	    					yAt > ponto3.centroy + 20 &&
+	    					yAt < centroy4 - 20
+	    			){//coluna2
+	    				col2.add(reg.remove(i--));
+	    			}
+	    		}
+	    		Collections.sort(col1,new Sorter("centroy",1));
+	    		Collections.sort(col2,new Sorter("centroy",1));
+	    		
+	    		
+	    		if(col1.size()!=col2.size()){
+	    			for(int i=0; i<Math.max(col1.size(), col2.size()); i+=1){
+	        			Region p1=null;
+	        			try{
+	        				p1=col1.get(i);
+	        			}catch(Exception e){}
+	        			Region p2=null;
+	        			try{
+	        				p2=col2.get(i);
+	        			}catch(Exception e){}
+	        			if(p1!=null && p2!=null){
+	        				System.out.println(p1.centrox+":"+p1.centroy+":"+p1.area+" "+p2.centrox+":"+p2.centroy+":"+p2.area);
+	        			}else if(p2!=null){
+	        				System.out.println("-:-:- "+p2.centrox+":"+p2.centroy+":"+p2.area);
+	        			}else if(p1!=null){
+	        				System.out.println(p1.centrox+":"+p1.centroy+":"+p1.area+" -:-:-");
+	        			}
+	        		}
+	    			throw new Exception("tamanho da coluna dos clocks invalido col1:"+col1.size()+" col2:"+col2.size());
+	    		}
+	    		
+	    		
+	    		//check number of questions
+	    		Hashtable<Integer,List<String>> resp=new Hashtable<Integer,List<String>>();
+	    		for(int i=0;i<col1.size();i++){
+	    			Region clock1=col1.get(i);
+	    			Region clock2=col2.get(i);
+	    			//int distx=clock2.centrox-clock1.centrox;
+	    			double aClock=(double)(clock2.centroy-clock1.centroy)/(double)(clock2.centrox-clock1.centrox);
+	    			double bClock=(double)clock1.centroy-aClock*(double)clock1.centrox;
+	    			double clockDistX=((double)(clock2.centrox-clock1.centrox))/26;//numero de divisoes entre o clocks
+	    			for(int j=1;j<25;j++){
+	    				if((j-1)%6==0)continue;
+	    				
+	    				int x=(int)(clockDistX*j+clock1.centrox);
+	    				int y=(int)(x*aClock+bClock);
+	    				
+	    				String marca=String.format(Locale.US, "%1$d",Math.round(conferirMarcacao(x,y,m)*100));
+	    				
+	    				int quesN=(j-1)/6*col1.size()+i;
+	    				if(resp.containsKey(quesN)){
+	    					resp.get(quesN).add(marca);
+	    				}else{
+	    					List<String>lista=new Vector<String>();
+	    					lista.add(marca);
+	    					resp.put(quesN, lista);
+	    				}
+	    			}
+	    		}
+	    		//clImg.saveFilteredImage("/home/samuelkato/tmp1.bmp",m);
+	    		
+	    		String questoes="[";
+	    		for (int i=0;i<col1.size()*4;i++) {
+	    			String alts="";
+	    			if(resp.get(i)!=null){
+	    				for(int j=0;j<resp.get(i).size();j++){
+	    					if(j>0)alts+=",";
+	    					alts+=resp.get(i).get(j);
+	    				}
+	    			}
+	    			if(i>0)questoes+=",";
+	    			questoes+=String.format("[%1$s]", alts);
+	    		}
+	    		questoes+="]";
+	    		saidaHt.put("questoes", questoes);
+	    		
     		}catch(Exception e){
-    			switch(e.getMessage()){
-    			case "90":
-    				System.out.println("imagem rotacionada em 90");
-    				file=ImageProcessing.rotate(file,90);
-    				break;
-    			case "180":
-    				System.out.println("imagem rotacionada em 180");
-    				file=ImageProcessing.rotate(file,180);
-    				break;
-    			case "-90":
-    				System.out.println("imagem rotacionada em -90");
-    				file=ImageProcessing.rotate(file,-90);
-    				break;
-    			default:
-    				throw e;
-    			}
-    		}finally{
-    			clImg=new ImageProcessing(file);
-    			reg=clImg.regionProps();
-    			pontosRef=procurar3pontos(clImg);
+    			saidaHt.put("msg", "\""+e.getMessage()+"\"");
     		}
+    		
+    		String formatoImg = "jpg";
+    		
+    		BufferedImage imgRes = clImg.img;
 
-    		boolean[][] m = clImg.m;
-    		String qr=lerQr(file, pontosRef, clImg.width);
-    		if(qr=="")throw new Exception("qr code null");
-    		
-    		Region ponto1=pontosRef.get(0);
-    		Region ponto2=pontosRef.get(1);
-    		Region ponto3=pontosRef.get(2);
-//    		int centrox4=ponto3.centrox+ponto1.centrox-ponto2.centrox;
-    		int centroy4=ponto3.centroy+ponto1.centroy-ponto2.centroy;
-    		//gerarPontosCartao(pontosRef,reg,23);//prova de tatui impressa sem clocks
-    		
-    		List<Region> col1=new Vector<Region>();
-    		List<Region> col2=new Vector<Region>();
-    		//linha entre ponto1 e ponto2
-    		double a=(double)(ponto1.centrox-ponto2.centrox)/(double)(ponto1.centroy-ponto2.centroy);
-    		double b=(double)ponto2.centrox-a*(double)ponto2.centroy;
-    		double b2=(double)ponto3.centrox-a*(double)ponto3.centroy;
-    		for(int i=0;i<reg.size();i++){
-    			if(reg.get(i).area < 30 || reg.get(i).area>200)continue;
-    			
-    			int yAt=reg.get(i).centroy;
-    			int xAt=reg.get(i).centrox;
-    			int x=(int)(yAt*a+b);
-    			int x2=(int)(yAt*a+b2);
-    			
-    			if(
-    					x+5>xAt &&
-    					x-5<xAt &&
-    					yAt>ponto2.centroy+20 &&
-    					yAt<ponto1.centroy-20 &&
-    					
-    					yAt > ponto2.centroy + 20 &&
-    					yAt < ponto1.centroy - 20
-    			){//coluna1
-    				col1.add(reg.remove(i--));
-    			}else if(
-    					x2+5>xAt &&
-    					x2-5<xAt &&
-    					yAt>ponto3.centroy+20 &&
-    					
-    					yAt > ponto3.centroy + 20 &&
-    					yAt < centroy4 - 20
-    			){//coluna2
-    				col2.add(reg.remove(i--));
-    			}
-    		}
-    		Collections.sort(col1,new Sorter("centroy",1));
-    		Collections.sort(col2,new Sorter("centroy",1));
-    		
-    		
-    		if(col1.size()!=col2.size()){
-    			for(int i=0; i<Math.max(col1.size(), col2.size()); i+=1){
-        			Region p1=null;
-        			try{
-        				p1=col1.get(i);
-        			}catch(Exception e){}
-        			Region p2=null;
-        			try{
-        				p2=col2.get(i);
-        			}catch(Exception e){}
-        			if(p1!=null && p2!=null){
-        				System.out.println(p1.centrox+":"+p1.centroy+":"+p1.area+" "+p2.centrox+":"+p2.centroy+":"+p2.area);
-        			}else if(p2!=null){
-        				System.out.println("-:-:- "+p2.centrox+":"+p2.centroy+":"+p2.area);
-        			}else if(p1!=null){
-        				System.out.println(p1.centrox+":"+p1.centroy+":"+p1.area+" -:-:-");
-        			}
-        		}
-    			throw new Exception("tamanho da coluna dos clocks invalido col1:"+col1.size()+" col2:"+col2.size());
-    		}
-    		System.out.println("");
-    		
-    		
-    		//check number of questions
-    		Hashtable<Integer,List<String>> resp=new Hashtable<Integer,List<String>>();
-    		for(int i=0;i<col1.size();i++){
-    			Region clock1=col1.get(i);
-    			Region clock2=col2.get(i);
-    			//int distx=clock2.centrox-clock1.centrox;
-    			double aClock=(double)(clock2.centroy-clock1.centroy)/(double)(clock2.centrox-clock1.centrox);
-    			double bClock=(double)clock1.centroy-aClock*(double)clock1.centrox;
-    			double clockDistX=((double)(clock2.centrox-clock1.centrox))/26;//numero de divisoes entre o clocks
-    			for(int j=1;j<25;j++){
-    				if((j-1)%6==0)continue;
-    				
-    				int x=(int)(clockDistX*j+clock1.centrox);
-    				int y=(int)(x*aClock+bClock);
-    				
-    				String marca=String.format(Locale.US, "%1$d",Math.round(conferirMarcacao(x,y,m)*100));
-    				
-    				int quesN=(j-1)/6*col1.size()+i;
-    				if(resp.containsKey(quesN)){
-    					resp.get(quesN).add(marca);
-    				}else{
-    					List<String>lista=new Vector<String>();
-    					lista.add(marca);
-    					resp.put(quesN, lista);
-    				}
-    			}
-    		}
-    		//clImg.saveFilteredImage("/home/samuelkato/tmp1.bmp",m);
-    		
-    		String saida="{\"qr\":\""+qr+"\",\"questoes\":[";
-    		for (int i=0;i<col1.size()*4;i++) {
-    			String alts="";
-    			if(resp.get(i)!=null){
-    				for(int j=0;j<resp.get(i).size();j++){
-    					if(j>0)alts+=",";
-    					alts+=resp.get(i).get(j);
-    				}
-    			}
-    			if(i>0)saida+=",";
-    			saida+=String.format("[%1$s]", alts);
-    		}
-    		saida+="]}";
-    		return saida;
-    		
+    		String nomeImgZip = md5Hash(imgRes) + "." + formatoImg;
+			
+			try{
+				zipSaida.putNextEntry(new ZipEntry(nomeImgZip));
+				ImageIO.write(imgRes, formatoImg, zipSaida);
+	    		zipSaida.closeEntry();
+	    		
+	    		//passar saidaHt para json
+	    		saidaHt.put("file", "\""+nomeImgZip+"\"");
+	    		Enumeration<String> enumKey = saidaHt.keys();
+	    		while(enumKey.hasMoreElements()){
+	    			String key = enumKey.nextElement();
+	    		    String val = saidaHt.get(key);
+	    		    if(saida != "") saida += ",";
+	    		    saida += "\""+key+"\""+":"+val;
+	    		}
+	    		saida="{"+saida+"}";
+	    		
+			}catch(Exception e){
+				//unico caso em que a imagem nao vai para o zip
+				throw new Exception("imagemRepetida");
+			}
+			return saida;
     	}
+    	
+    	/**
+    	 * retorna o md5 hash de uma imagem
+    	 * */
+    	private String md5Hash(BufferedImage img){
+			String hexString = "";
+			try{
+				ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		        ImageIO.write(img, "png", outputStream);
+		        byte[] data = outputStream.toByteArray();
+	
+		        MessageDigest md = MessageDigest.getInstance("MD5");
+		        md.update(data);
+				
+				byte[] inBytes=md.digest();
+				for (int i=0; i < inBytes.length; i++) { //for loop ID:1
+				    hexString +=
+				    Integer.toString( ( inBytes[i] & 0xff ) + 0x100, 16).substring( 1 );
+				}
+			}catch(Exception e){
+				e.printStackTrace();
+				return "";
+			}
+			return hexString;
+		}
     	
     	/**
     	 * TASK permitir leitura invertida
@@ -383,7 +470,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		config.maxArea=400;
     		List<Region> regOut=clImg.filterRegions(clImg.regionProps(bw),config);
     		config.minArea=400;
-    		config.maxArea=700;
+    		config.maxArea=800;
     		List<Region> regIn=clImg.filterRegions(clImg.regionProps(bw),config);
 
     		List<Region> regInv=new Vector<Region>();
