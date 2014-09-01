@@ -638,7 +638,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     	 */
     	private String lerQr(BufferedImage file, List<Region> pontosRef, int rWidth){
     		//long startTime = System.nanoTime();
-    		float prop=file.getWidth()/rWidth;
+    		float prop=(float)file.getWidth()/(float)rWidth;
     		
     		String result=null;
     		QRCodeReader reader=new QRCodeReader();
@@ -655,6 +655,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     			
     			BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(small)));
     			
+    			/*salva imagem zoada na pasta pessoal*/
 //    			try{
 //    				int cnt2=0;
 //        			File outputfile = new File("/home/samuelkato/qrZoado-"+(cnt2)+".png");
