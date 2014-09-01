@@ -655,7 +655,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     			
     			BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(small)));
     			
-    			/*salva imagem zoada na pasta pessoal*/
+    			/* salva imagem zoada na pasta pessoal */
 //    			try{
 //    				int cnt2=0;
 //        			File outputfile = new File("/home/samuelkato/qrZoado-"+(cnt2)+".png");
@@ -676,6 +676,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 //    			}catch(Exception e3){
 //    				System.out.println(e3.getMessage());
 //    			}
+    			/* fim salva imagem zoada na pasta pessoal */
     			
     			class configThresh extends ConfigImageProcessing{
     				public boolean checkThreshold(int r, int g, int b, int rAvg, int gAvg, int bAvg){
