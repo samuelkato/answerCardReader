@@ -467,10 +467,10 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		
     		ConfigImageProcessing config=new ConfigImageProcessing();
     		config.minArea=200;
-    		config.maxArea=400;
+    		config.maxArea=600;
     		List<Region> regOut=clImg.filterRegions(clImg.regionProps(bw),config);
     		config.minArea=400;
-    		config.maxArea=800;
+    		config.maxArea=1000;
     		List<Region> regIn=clImg.filterRegions(clImg.regionProps(bw),config);
 
     		List<Region> regInv=new Vector<Region>();
