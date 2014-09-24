@@ -728,6 +728,14 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		}
     		
     		//System.out.println((System.nanoTime()-startTime)/1000000000);
+    		//inverter qr de alunoID:provaID => provaID:alunoID
+    		 String[] parts = result.split(":");
+    		 if(parts.length==2){
+    			 int p1 = Integer.parseInt(parts[0]);
+    			 int p2 = Integer.parseInt(parts[1]);
+    			 if(p2>p1)result = ""+p2+":"+p1;
+    		 }
+    		
     		return result;
     	}
     	
