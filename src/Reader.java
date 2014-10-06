@@ -266,6 +266,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 	    				file=ImageProcessing.rotate(file,-90);
 	    				break;
 	    			default:
+	    				e.printStackTrace();
 	    				throw e;
 	    			}
 	    		}finally{
@@ -273,7 +274,6 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 	    			reg=clImg.regionProps();
 	    			pontosRef=procurar3pontos(clImg);
 	    		}
-	
 	    		boolean[][] m = clImg.m;
 	    		String qr=lerQr(file, pontosRef, clImg.width);
 	    		saidaHt.put("qr", "\""+qr+"\"");
@@ -474,7 +474,6 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		List<Region> regIn=clImg.filterRegions(clImg.regionProps(bw),config);
 
     		List<Region> regInv=new Vector<Region>();
-    		
     		for(int i=0; i<regIn.size(); i++){
     			for(int j=0; j<regOut.size(); j++){
     				int folga=3;
@@ -488,10 +487,10 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     			}
     		}
     		
-    		if(regInv.size()<3)throw new Exception("Erro: 3 pontos não encontrados (tamanho)");
+    		if(regInv.size()<3)throw new Exception("Erro: 3 pontos nao encontrados (tamanho)");
     		
     		regInv = busca3pontos(regInv);
-    		if(regInv==null)throw new Exception("Erro: 3 pontos não encontrados (90)");
+    		if(regInv==null)throw new Exception("Erro: 3 pontos nao encontrados (90)");
     		
     		List<Region> ret=new Vector<Region>();
     		
@@ -566,7 +565,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		}else if(!ok1 && ok2 && ok3 && ok4){//girar 90 anti-horario
     			throw new Exception("-90");
     		}else{
-    			throw new Exception("Erro: 3 pontos não encontrados");
+    			throw new Exception("Erro: 3 pontos nao encontrados (posicao)");
     		}
     		
     		return ret;
@@ -578,14 +577,15 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		int max=(len-1)*len*len+(len-2)*len+len-3;//valor maximo de i
     		
     		List<List<Region>> ret=new Vector<List<Region>>();
-    		
     		do{
     			i++;
     			String a = Integer.toString(i, len);
     			while(a.length()<3)a="0"+a;
-    			int p1=Integer.parseInt(a.substring(0,1));
-    			int p2=Integer.parseInt(a.substring(1,2));
-    			int p3=Integer.parseInt(a.substring(2,3));
+    			
+    			int p1=Integer.parseInt(a.substring(0,1),len);
+    			int p2=Integer.parseInt(a.substring(1,2),len);
+    			int p3=Integer.parseInt(a.substring(2,3),len);
+    			
     			if(p1==p2 || p1==p3 || p2==p3)continue;
     			
 	    		List<Region> pTest=new Vector<Region>();
@@ -596,6 +596,8 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 	    			ret.add(pTest);
 	    		}
     		}while(i<=max);
+    		
+    		
     		
     		int retInd=-1;
     		int maxDistx=0;//distancia x entre p2 e p3
@@ -608,7 +610,6 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     			}
     		}
     		if(retInd>=0)return ret.get(retInd);
-    		
     		return null;
     	}
     	
@@ -616,14 +617,16 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     	 * verifica posicionamento dos 3 pontos do cartao
     	 * */
     	private boolean check3pontos(List<Region> pontosRef){
+    		boolean ret=false;
     		Region ponto1=pontosRef.get(0);
     		Region ponto2=pontosRef.get(1);
     		Region ponto3=pontosRef.get(2);
     		
     		double a=-(double)(ponto1.centrox-ponto2.centrox)/(double)(ponto1.centroy-ponto2.centroy);
     		double a2=(double)(ponto2.centroy-ponto3.centroy)/(double)(ponto2.centrox-ponto3.centrox);
-    		
-    		return Math.abs(a2-a)<0.01;
+		
+			ret = Math.abs(a2-a)<0.01;
+    		return ret;
     	}
     	
     	
@@ -647,7 +650,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		
     		
     		int cnt=0;
-    		BufferedImage qrImage=file.getSubimage((int)((pontosRef.get(1).centrox+185)*prop), (int)((pontosRef.get(1).centroy-130)*prop), (int)(160*prop), (int)(160*prop));
+    		BufferedImage qrImage=file.getSubimage((int)((pontosRef.get(1).centrox+175)*prop), (int)((pontosRef.get(1).centroy-130)*prop), (int)(160*prop), (int)(160*prop));
     		//clone
     		BufferedImage small=qrImage.getSubimage(0, 0, qrImage.getWidth(), qrImage.getHeight());
     		BufferedImage bwImg=null;
