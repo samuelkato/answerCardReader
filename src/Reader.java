@@ -47,7 +47,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
         javax.swing.SwingUtilities.invokeLater(new Runnable() {
             public void run() {
             	//Create and set up the window.
-                JFrame frame = new JFrame("Ler Folha Resposta v5");
+                JFrame frame = new JFrame("Ler Folha Resposta v6");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
          
                 //Create and set up the content pane.
@@ -239,7 +239,12 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     	private String lerCartao(BufferedImage file) throws Exception{
     		ImageProcessing clImg=new ImageProcessing(file);
     		String saida="";
-    		Hashtable<String,String> saidaHt=new Hashtable<String,String>(); 
+    		Hashtable<String,String> saidaHt=new Hashtable<String,String>();
+    		//clImg.m = clImg.createMatrix();
+    		//clImg.m=clImg.dilate(clImg.m);
+    		//clImg.saveFilteredImage("/home/samuelkato/sa.bmp", clImg.bwlabel(clImg.m));
+    		
+//    		clImg.saveFilteredImage("/home/samuelkato/sa.bmp", clImg.bwlabel());
     		
     		try{
 	    		//file=rotate(file,45);
@@ -650,7 +655,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		
     		
     		int cnt=0;
-    		BufferedImage qrImage=file.getSubimage((int)((pontosRef.get(1).centrox+175)*prop), (int)((pontosRef.get(1).centroy-130)*prop), (int)(160*prop), (int)(160*prop));
+    		BufferedImage qrImage=file.getSubimage((int)((pontosRef.get(1).centrox+175)*prop), (int)(Math.max(0,(pontosRef.get(1).centroy-130)*prop)), (int)(160*prop), (int)(160*prop));
     		//clone
     		BufferedImage small=qrImage.getSubimage(0, 0, qrImage.getWidth(), qrImage.getHeight());
     		BufferedImage bwImg=null;

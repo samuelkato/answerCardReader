@@ -412,7 +412,22 @@ class ConfigImageProcessing{
 	//false => branco
 	public boolean checkThreshold(int r, int g, int b, int rAvg, int gAvg, int bAvg){
 		//return !(r>g+20 && r>b+20) && r+g+b800;
-		return r+g+b<rAvg+gAvg+bAvg-80 && !(r>g+10 && r>b+10 && r>150) && !(r>200 || g>200);
+		
+//		return
+//				r+g+b<rAvg+gAvg+bAvg-50		//cores mais escuras q a media-80
+//				&& !(r>g+10 && r>b+10 )		//cores vermelhas
+//				&& !(r>200 || g>200)		//mais de 200 r ou mais de 200 g
+//		;
+		
+		return
+				( r < rAvg - 50 || r < 40 )
+				&& ( g < gAvg - 50  || g < 40 )
+				&& ( b < bAvg - 50 || b < 40 )	//cores mais escuras q a media-20
+				&& !( r > g+50 && r > b+50 )		//cores vermelhas
+				&& !(r>200 || g>200)		//mais de 200 r ou mais de 200 g
+				|| ( b > g+50 && b > r+50 )
+		;
+		
 		//return !(r+g+b>700 || r>180);
 	}
 	public boolean checkRegion(Region regAt){
