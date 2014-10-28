@@ -1,3 +1,9 @@
+/**
+ * cria zip saida
+ * melhoria na deteccao de cores
+ * 
+ */
+
 import java.awt.BorderLayout;
 import java.awt.Cursor;
 import java.awt.Insets;
