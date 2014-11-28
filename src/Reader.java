@@ -286,6 +286,8 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 	    			pontosRef=procurar3pontos(clImg);
 	    		}
 	    		boolean[][] m = clImg.m;
+	    		m = clImg.erode(m);
+	    		m = clImg.dilate(m);
 	    		String qr=lerQr(file, pontosRef, clImg.width);
 	    		saidaHt.put("qr", "\""+qr+"\"");
 	    		
@@ -471,8 +473,13 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		//evitar "furos" nos 3 quadrados delimitantes
     		//clImg.mInv=clImg.erode(clImg.mInv);
     		
-    		int[][] bw=clImg.bwlabel(clImg.m);
-//    		clImg.saveFilteredImage("/home/samuelkato/tmp1.bmp",clImg.m);
+    		boolean[][] m = clImg.erode(clImg.m);
+    		m = clImg.dilate(m);
+    		int[][] bw=clImg.bwlabel(m);
+    		
+    		//clImg.m=clImg.dilate(clImg.m);
+    		
+//    		clImg.saveFilteredImage("/home/samuelkato/tmp1.bmp",m);
 //    		clImg.saveFilteredImage("/home/samuelkato/tmp2.bmp",clImg.mInv);
 //    		clImg.saveFilteredImage("/home/samuelkato/tmp3.bmp",bwInv);
     		
