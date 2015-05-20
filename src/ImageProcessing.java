@@ -14,33 +14,30 @@ public class ImageProcessing {
 	int rAvg,gAvg,bAvg,width,height;
 	int[][][] oRgb=null;
 	public ImageProcessing(BufferedImage img) {
-		this.img=criarImagemRedimensionada(img, 1000);
+		this.img = criarImagemRedimensionada(img, 1000);
 		this.width = this.img.getWidth();
 		this.height = this.img.getHeight();
-		this.m=new boolean[this.height][this.width];
-		this.mInv=new boolean[this.height][this.width];
-		this.oRgb=new int[height][width][3];
+		this.m = new boolean[this.height][this.width];
+		this.mInv = new boolean[this.height][this.width];
+		this.oRgb = new int[height][width][3];
 		
 		long red=0;
 		long green=0;
 		long blue=0;
 		for (int x = 0; x < width; x++) {
 			for (int y = 0; y < height; y++) {
-				int color = this.img.getRGB(x, y);
-				this.oRgb[y][x][0]=((color & 0x00ff0000) >> 16);
-				this.oRgb[y][x][1]=((color & 0x0000ff00) >> 8);
-				this.oRgb[y][x][2]=(color & 0x000000ff);
-				red+=this.oRgb[y][x][0];
-				green+=this.oRgb[y][x][1];
-				blue+=this.oRgb[y][x][2];
+				long color = (long)this.img.getRGB(x, y);
+				this.oRgb[y][x][0] = (int)((color >> 16) & 0xff) ;
+				this.oRgb[y][x][1] = (int)((color >> 8) & 0xff) ;
+				this.oRgb[y][x][2] = (int)(color & 0xff);
+				red += this.oRgb[y][x][0];
+				green += this.oRgb[y][x][1];
+				blue += this.oRgb[y][x][2];
 			}
-			red/=height;
-			green/=height;
-			blue/=height;
 		}
-		this.rAvg=(int)red;
-		this.gAvg=(int)green;
-		this.bAvg=(int)blue;
+		this.rAvg = (int)(red/(width*height));
+		this.gAvg = (int)(green/(width*height));
+		this.bAvg = (int)(blue/(width*height));
 	}
 	/*
 	public void rotate(int ang){
@@ -418,13 +415,14 @@ class ConfigImageProcessing{
 //				&& !(r>g+10 && r>b+10 )		//cores vermelhas
 //				&& !(r>200 || g>200)		//mais de 200 r ou mais de 200 g
 //		;
-		
+		//System.out.println(r+" "+rAvg);
 		return
-				( r < rAvg - 50 || r < 40 )
-				&& ( g < gAvg - 50  || g < 40 )
-				&& ( b < bAvg - 50 || b < 40 )	//cores mais escuras q a media-20
-				&& !( r > g+50 && r > b+50 )		//cores vermelhas
-				&& !(r>200 || g>200)		//mais de 200 r ou mais de 200 g
+				(
+					( r < rAvg - 30 || r < 40 )
+					&& ( g < gAvg - 30  || g < 40 )
+					&& ( b < bAvg - 30 || b < 40 )	//cores mais escuras q a media-20
+					&& !( r > g+60 && r > b+60 )	//cores vermelhas
+				)
 				|| ( b > g+50 && b > r+50 )
 		;
 		

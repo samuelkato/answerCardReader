@@ -248,9 +248,8 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		Hashtable<String,String> saidaHt=new Hashtable<String,String>();
     		//clImg.m = clImg.createMatrix();
     		//clImg.m=clImg.dilate(clImg.m);
-    		//clImg.saveFilteredImage("/home/samuelkato/sa.bmp", clImg.bwlabel(clImg.m));
-    		
-//    		clImg.saveFilteredImage("/home/samuelkato/sa.bmp", clImg.bwlabel());
+    		//clImg.saveFilteredImage("/home/samuelkato/sa1.bmp", clImg.bwlabel(clImg.m));
+    		//clImg.saveFilteredImage("/home/samuelkato/sa.bmp", clImg.bwlabel());
     		
     		try{
 	    		//file=rotate(file,45);
@@ -473,11 +472,13 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		//evitar "furos" nos 3 quadrados delimitantes
     		//clImg.mInv=clImg.erode(clImg.mInv);
     		
-    		boolean[][] m = clImg.erode(clImg.m);
-    		m = clImg.dilate(m);
-    		int[][] bw=clImg.bwlabel(m);
+    		//boolean[][] m = clImg.erode(clImg.m);
+    		boolean[][] m = clImg.m;
+    		//m = clImg.erode(m);
+    		int[][] bw = clImg.bwlabel(m);
     		
-    		//clImg.m=clImg.dilate(clImg.m);
+//    		clImg.m=clImg.dilate(clImg.m);
+//    		clImg.m=clImg.erode(clImg.m);
     		
 //    		clImg.saveFilteredImage("/home/samuelkato/tmp1.bmp",m);
 //    		clImg.saveFilteredImage("/home/samuelkato/tmp2.bmp",clImg.mInv);
@@ -508,7 +509,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		if(regInv.size()<3)throw new Exception("Erro: 3 pontos nao encontrados (tamanho)");
     		
     		regInv = busca3pontos(regInv);
-    		if(regInv==null)throw new Exception("Erro: 3 pontos nao encontrados (90)");
+    		if(regInv==null)throw new Exception("Erro: 3 pontos nao encontrados (angulo 90)");
     		
     		List<Region> ret=new Vector<Region>();
     		
