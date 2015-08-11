@@ -306,7 +306,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 	    		double b=(double)ponto2.centrox-a*(double)ponto2.centroy;
 	    		double b2=(double)ponto3.centrox-a*(double)ponto3.centroy;
 	    		for(int i=0;i<reg.size();i++){
-	    			if(reg.get(i).area < 30 || reg.get(i).area>200)continue;
+	    			if(reg.get(i).area < 30 || reg.get(i).area>200 || reg.get(i).getDensity() < 0.5)continue;
 	    			
 	    			int yAt=reg.get(i).centroy;
 	    			int xAt=reg.get(i).centrox;
@@ -349,11 +349,11 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 	        				p2=col2.get(i);
 	        			}catch(Exception e){}
 	        			if(p1!=null && p2!=null){
-	        				System.out.println(p1.centrox+":"+p1.centroy+":"+p1.area+" "+p2.centrox+":"+p2.centroy+":"+p2.area);
+	        				System.out.println(p1+" "+p2);
 	        			}else if(p2!=null){
-	        				System.out.println("-:-:- "+p2.centrox+":"+p2.centroy+":"+p2.area);
+	        				System.out.println("-:-:- "+p2);
 	        			}else if(p1!=null){
-	        				System.out.println(p1.centrox+":"+p1.centroy+":"+p1.area+" -:-:-");
+	        				System.out.println(p1+" -:-:-");
 	        			}
 	        		}
 	    			throw new Exception("tamanho da coluna dos clocks invalido col1:"+col1.size()+" col2:"+col2.size());

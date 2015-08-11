@@ -362,20 +362,23 @@ public class ImageProcessing {
 		long[][] tmp=new long[nRegions][7];
 
 		for(int i=0;i<nRegions;i++){
+			tmp[i][0] = 0;
 			tmp[i][3]=width+1;//minx
 			tmp[i][4]=height+1;//miny
 			tmp[i][5]=-1;//maxx
 			tmp[i][6]=-1;//maxy
 		}
+		int reg;
 		for(int i=0;i<height;i++){
 			for(int j=0;j<width;j++){
-				tmp[res[i][j]][0]++;
-				tmp[res[i][j]][1]+=j;
-				tmp[res[i][j]][2]+=i;
-				if(j<tmp[res[i][j]][3])tmp[res[i][j]][3]=j;
-				if(i<tmp[res[i][j]][4])tmp[res[i][j]][4]=i;
-				if(j>tmp[res[i][j]][3])tmp[res[i][j]][5]=j;
-				if(i>tmp[res[i][j]][4])tmp[res[i][j]][6]=i;
+				reg = res[i][j];
+				tmp[ reg ][0]++;
+				tmp[ reg ][1]+=j;
+				tmp[ reg ][2]+=i;
+				if(j<tmp[ reg ][3]) tmp[ reg ][3]=j;
+				if(i<tmp[ reg ][4]) tmp[ reg ][4]=i;
+				if(j>tmp[ reg ][5]) tmp[ reg ][5]=j;
+				if(i>tmp[ reg ][6]) tmp[ reg ][6]=i;
 			}
 		}
 		
@@ -464,9 +467,15 @@ class Region{
 		}
 		return 0;
 	}
+	double getDensity(){
+		double dX = (maxx - minx) + 1;
+		double dY = (maxy - miny) + 1;
+		return area / (dX * dY);
+	}
 	
 	@Override
    public String toString() {
-     return "\n-------\narea:"+this.area+"\nx:"+this.centrox+"\ny:"+this.centroy;
+     return "\n-------\narea:"+this.area+"\nx:"+this.centrox+"\ny:"+this.centroy+"\nw:"+this.maxx+"-"+minx+"("+(maxx-minx)+")"+
+     "\nh:"+this.maxy+"-"+miny+"("+(maxy-miny)+")"+this.getDensity();
    }
 }
