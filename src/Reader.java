@@ -485,69 +485,37 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 //    		clImg.saveFilteredImage("/home/samuelkato/tmp3.bmp",bwInv);
     		
     		ConfigImageProcessing config=new ConfigImageProcessing();
-    		config.minArea=200;
-    		config.maxArea=600;
-    		List<Region> regOut=clImg.filterRegions(clImg.regionProps(bw),config);
     		config.minArea=400;
     		config.maxArea=1000;
+    		List<Region> regOut=clImg.filterRegions(clImg.regionProps(bw),config);
+    		config.minArea=200;
+    		config.maxArea=600;
     		List<Region> regIn=clImg.filterRegions(clImg.regionProps(bw),config);
 
     		List<Region> regInv=new Vector<Region>();
-    		for(int i=0; i<regIn.size(); i++){
-    			for(int j=0; j<regOut.size(); j++){
-    				int folga=3;
-    				int xout=regOut.get(j).centrox;
-    				int yout=regOut.get(j).centroy;
-    				int xin=regIn.get(i).centrox;
-    				int yin=regIn.get(i).centroy;
+    		int folga = 3;
+    		for(Region pIn : regIn){
+    			if(pIn.getDensity() < 0.5)continue;
+    			for(Region pOut : regOut){
+        			if(pOut.getDensity() > 0.5)continue;
+    				int xout=pOut.centrox;
+    				int yout=pOut.centroy;
+    				int xin=pIn.centrox;
+    				int yin=pIn.centroy;
     				if(xout-folga <= xin && xout+folga >= xin && yout-folga <= yin && yout+folga >= yin){
-    					regInv.add(regIn.get(i));
+    					regInv.add(pIn);
     				}
     			}
     		}
-    		
+
     		if(regInv.size()<3)throw new Exception("Erro: 3 pontos nao encontrados (tamanho)");
+    		
     		
     		regInv = busca3pontos(regInv);
     		if(regInv==null)throw new Exception("Erro: 3 pontos nao encontrados (angulo 90)");
     		
     		List<Region> ret=new Vector<Region>();
-    		
-    		int[][] max = new int[4][2];
-    		for(int i=0; i<max.length; i+=1)max[i][1]=-10000000;
-    		
-    		int maxx = 0, maxy = 0;
-    		for(int i=0;i<regInv.size();i++){
-    			Region regAt=regInv.get(i);
-    			int y=regAt.centroy, x=regAt.centrox;
-    			if(maxx < x)maxx = x;
-    			if(maxy < y)maxy = y;
-    			
-    			//infesq
-    			int infesq = +y-x;
-    			if(infesq > max[0][1]){
-    				max[0][1]=infesq;
-    				max[0][0]=i;
-    			}
-    			//supesq
-    			int supesq = -y-x;
-    			if(supesq > max[1][1]){
-    				max[1][1]=supesq;
-    				max[1][0]=i;
-    			}
-    			//supdir
-    			int supdir = -y+x;
-    			if(supdir > max[2][1]){
-    				max[2][1]=supdir;
-    				max[2][0]=i;
-    			}
-    			//infdir
-    			int infdir = +y+x;
-    			if(infdir > max[3][1]){
-    				max[3][1]=infdir;
-    				max[3][0]=i;
-    			}
-    		}
+
     		
     		
     		/*
@@ -557,34 +525,38 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		um deles eh repetido
     		*/
     		
-    		Region p1=regInv.get(max[0][0]);//infesq
-    		Region p2=regInv.get(max[1][0]);//supesq
-    		Region p3=regInv.get(max[2][0]);//supdir
-    		Region p4=regInv.get(max[3][0]);//infdir
+    		int mX = clImg.width / 2;
+    		int mY = clImg.height / 2;
     		
+    		Region p1 = null,p2 = null, p3 = null, p4 = null;
+    		for(Region p : regInv){
+    			if(p.centrox < mX && p.centroy > mY){
+    				p1 = p;
+    			}
+    			if(p.centrox < mX && p.centroy < mY){
+    				p2 = p;
+    			}
+    			if(p.centrox > mX && p.centroy < mY){
+    				p3 = p;
+    			}
+    			if(p.centrox > mX && p.centroy > mY){
+    				p4 = p;
+    			}
+    		}
     		
-    		
-    		boolean ok1,ok2,ok3,ok4;
-    		
-    		ok1=(p1.centrox < maxx/2) && (p1.centroy > maxy/2);//infesq
-    		ok2=(p2.centrox < maxx/2) && (p2.centroy < maxy/2);//supesq
-    		ok3=(p3.centrox > maxx/2) && (p3.centroy < maxy/2);//supdir
-    		ok4=(p4.centrox > maxx/2) && (p4.centroy > maxy/2);//infdir
-    		
-    		
-    		
-    		if(ok1 && ok2 && ok3 && !ok4){//correto
+    		if(p1 != null && p2 != null && p3 != null && p4 == null){//correto
     			ret.add(p1);
     			ret.add(p2);
     			ret.add(p3);
-    		}else if(ok1 && ok2 && !ok3 && ok4){//girar 90 horario
+    		}else if(p1 != null && p2 != null && p3 == null && p4 != null){//girar 90 horario
     			throw new Exception("90");
-    		}else if(ok1 && !ok2 && ok3 && ok4){//girar 180
+    		}else if(p1 != null && p2 == null && p3 != null && p4 != null){//girar 180
     			throw new Exception("180");
-    		}else if(!ok1 && ok2 && ok3 && ok4){//girar 90 anti-horario
+    		}else if(p1 == null && p2 != null && p3 != null && p4 != null){//girar 90 anti-horario
     			throw new Exception("-90");
     		}else{
-    			throw new Exception("Erro: 3 pontos nao encontrados (posicao)");
+    			
+    			throw new Exception("Erro: 3 pontos nao encontrados (posicao)\n"+p4);
     		}
     		
     		return ret;
@@ -669,7 +641,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
     		
     		
     		int cnt=0;
-    		BufferedImage qrImage=file.getSubimage((int)((pontosRef.get(1).centrox+175)*prop), (int)(Math.max(0,(pontosRef.get(1).centroy-130)*prop)), (int)(160*prop), (int)(160*prop));
+    		BufferedImage qrImage=file.getSubimage((int)((pontosRef.get(1).centrox+165)*prop), (int)(Math.max(0,(pontosRef.get(1).centroy-130)*prop)), (int)(160*prop), (int)(160*prop));
     		//clone
     		BufferedImage small=qrImage.getSubimage(0, 0, qrImage.getWidth(), qrImage.getHeight());
     		BufferedImage bwImg=null;
