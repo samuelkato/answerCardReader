@@ -9,12 +9,18 @@ import javax.imageio.ImageIO;
 
 public class ImageProcessing {
 	BufferedImage img=null;
+	BufferedImage imgOrig = null;
 	boolean[][] m=null;
 	boolean[][] mInv=null;
 	int rAvg,gAvg,bAvg,width,height;
 	int[][][] oRgb=null;
 	public ImageProcessing(BufferedImage img) {
-		this.img = criarImagemRedimensionada(img, 1000);
+		this.imgOrig = img;
+		this.reloadImg();
+	}
+	
+	private void reloadImg(){
+		this.img = criarImagemRedimensionada(this.imgOrig, 1000);
 		this.width = this.img.getWidth();
 		this.height = this.img.getHeight();
 		this.m = new boolean[this.height][this.width];
@@ -39,6 +45,7 @@ public class ImageProcessing {
 		this.gAvg = (int)(green/(width*height));
 		this.bAvg = (int)(blue/(width*height));
 	}
+	
 	/*
 	public void rotate(int ang){
 		int[][][] newORgb=new int[width][height][3];
@@ -152,6 +159,12 @@ public class ImageProcessing {
 	    return bimg;
 	}
 	
+	public void rotate(int angle){
+		this.imgOrig = ImageProcessing.rotate(this.imgOrig, angle);
+		this.reloadImg();
+		this.createMatrix();
+	}
+	
 	/**
 	 * cria uma imagem redimensionada a partir de uma imagem de referencia
 	 * 
@@ -176,6 +189,10 @@ public class ImageProcessing {
 		g.dispose();
 
 		return resizedImage;
+	}
+	
+	public BufferedImage criarImagemRedimensionada( int max ){
+		return ImageProcessing.criarImagemRedimensionada(this.img, max);
 	}
 
 	public void saveFilteredImage(String fileName,boolean[][] m){
@@ -408,6 +425,8 @@ public class ImageProcessing {
 class ConfigImageProcessing{
 	int minArea=50;
 	long maxArea=999999999;
+	double maxDensity = 1;
+	double minDensity = 0;
 	//true => preto
 	//false => branco
 	public boolean checkThreshold(int r, int g, int b, int rAvg, int gAvg, int bAvg){
@@ -432,11 +451,17 @@ class ConfigImageProcessing{
 		//return !(r+g+b>700 || r>180);
 	}
 	public boolean checkRegion(Region regAt){
+		
 		if(regAt.area<this.minArea || regAt.area>this.maxArea)return false;
-		int width=regAt.maxx-regAt.minx;
-		int height=regAt.maxy-regAt.miny;
-		float prop=(float)width/height;
-		if(prop < 0.1 && prop > 10)return false;
+		
+//		int width=regAt.maxx-regAt.minx;
+//		int height=regAt.maxy-regAt.miny;
+//		float prop=(float)width/height;
+//		if(prop < 0.1 || prop > 10)return false;
+		
+		double den = regAt.getDensity();
+		if(den < minDensity || den > maxDensity)return false;
+		
 		return true;
 	}
 }
@@ -475,7 +500,7 @@ class Region{
 	
 	@Override
    public String toString() {
-     return "\n-------\narea:"+this.area+"\nx:"+this.centrox+"\ny:"+this.centroy+"\nw:"+this.maxx+"-"+minx+"("+(maxx-minx)+")"+
-     "\nh:"+this.maxy+"-"+miny+"("+(maxy-miny)+")"+this.getDensity();
+     return "\narea:"+this.area+" ("+this.getDensity()+")"+"\n"+this.centrox+":"+this.centroy+"\nw:"+this.maxx+"-"+minx+"("+(maxx-minx)+")"+
+     "\nh:"+this.maxy+"-"+miny+"("+(maxy-miny)+")\n";
    }
 }
