@@ -53,7 +53,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 		javax.swing.SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
 				//Create and set up the window.
-				JFrame frame = new JFrame("Ler Folha Resposta v6");
+				JFrame frame = new JFrame("Ler Folha Resposta v6.3");
 				frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		 
 				//Create and set up the content pane.
@@ -398,7 +398,6 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 //			clImg.saveFilteredImage("/home/samuelkato/tmp1.bmp", m);
 //			clImg.saveFilteredImage("/home/samuelkato/tmp2.bmp", mInv);
 //			clImg.saveFilteredImage("/home/samuelkato/tmp3.bmp", bwInv);
-			clImg.createMatrix();
 			Exception $e = null;
 			List<Region> pontosRef=new Vector<Region>();
 			String[][] aInstr = {{},{"erode","dilate"},{"dilate","erode"},{"erode","dilate","dilate","erode"}};
@@ -601,9 +600,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 			List<Region> col1=null;
 			List<Region> col2=null;
 			
-			clImg.createMatrix();
-			
-			String[][] aInstr = {{},{"erode","dilate"},{"dilate","erode"},{"erode","dilate","dilate","erode"}};
+			String[][] aInstr = {{},{"dilate","erode"},{"erode","dilate"},{"erode","dilate","dilate","erode"}};
 			for(String[] aInstr2 : aInstr){
 				col1=new Vector<Region>();
 				col2=new Vector<Region>();
@@ -690,22 +687,69 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 		 * @throws IOException 
 		 */
 		private String lerQr(ImageProcessing clImg, List<Region> pontosRef){
-			BufferedImage file = clImg.img;
-			int rWidth = clImg.width;
-			//long startTime = System.nanoTime();
-			float prop=(float)file.getWidth()/(float)rWidth;
-			
 			String result=null;
-			QRCodeReader reader=new QRCodeReader();
-			Map<DecodeHintType,Object> tmpHintsMap = new EnumMap<DecodeHintType, Object>(DecodeHintType.class);
-			tmpHintsMap.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
 			
+			//long startTime = System.nanoTime();
+			int ang = (int)(Math.atan2(pontosRef.get(2).centroy - pontosRef.get(1).centroy, pontosRef.get(2).centrox - pontosRef.get(1).centrox)*180/Math.PI);
 			
-			int cnt=0;
+			BufferedImage file = clImg.imgOrig;
+			int rWidth = clImg.width;
+			float prop=(float)file.getWidth()/(float)rWidth;
 			BufferedImage qrImage=file.getSubimage((int)((pontosRef.get(1).centrox+165)*prop), (int)(Math.max(0,(pontosRef.get(1).centroy-130)*prop)), (int)(160*prop), (int)(160*prop));
+			
+			String[] mInstr = {"","tamanho100","tamanho200","pb","rotateang","rotate45","passabaixa"};
+			
+			for(int i = 0; i < mInstr.length; i++){
+				BufferedImage qrImg=qrImage.getSubimage(0, 0, qrImage.getWidth(), qrImage.getHeight());
+				qrImg = mudaImagem(qrImg,mInstr[i],ang);
+				for(int j = 0; j < mInstr.length; j++){
+					qrImg = mudaImagem(qrImg,mInstr[j],ang);
+					for(int k = 0; k < mInstr.length; k++){
+						qrImg = mudaImagem(qrImg,mInstr[k],ang);
+						result = lerQr2(qrImg);
+						if(result!=null)return result;
+					}
+				}
+			}
+			
+			
+
+			
+			return "";
+			
+			
+			
+			/*
+			
+			
+			
+			
+			int[] aRot = {0,45,(int)ang};
+			for(int rot : aRot){
+				BufferedImage small = ImageProcessing.rotate(qrImage, rot);
+				
+			}
+			
+			BufferedImage[] aQrImgs = {qrImage};
+			int cnt=0;
+			while(cnt < aQrImgs.length){
+				BufferedImage small = aQrImgs[cnt];
+				BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(small)));
+				
+				try{
+					result=reader.decode(bitmap,tmpHintsMap).getText();
+				}catch(Exception e){
+				cnt++;
+			}
+			
 			//clone
 			BufferedImage small=qrImage.getSubimage(0, 0, qrImage.getWidth(), qrImage.getHeight());
+			
+
 			BufferedImage bwImg=null;
+
+			
+			
 			while(result==null){
 				
 				BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(small)));
@@ -732,13 +776,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 //					System.out.println(e3.getMessage());
 //				}
 				/* fim salva imagem zoada na pasta pessoal */
-				
-				class configThresh extends ConfigImageProcessing{
-					public boolean checkThreshold(int r, int g, int b, int rAvg, int gAvg, int bAvg){
-						return r + g + b < (rAvg + gAvg + bAvg - 50) && !(r>g+10 && r>b+10 && r>150);
-					}
-				}
-				
+				/*
 				try{
 					result=reader.decode(bitmap,tmpHintsMap).getText();
 				}catch(Exception e){
@@ -749,11 +787,16 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 						small=tmp.matrix2img(tmp.m);
 						bwImg=small.getSubimage(0, 0, small.getWidth(), small.getHeight());
 					}else if(cnt==1){
-						System.out.println("-redimensionado 200x200");
-						small=ImageProcessing.criarImagemRedimensionada(small, 200);
+						
+						System.out.println("-rotacionado -"+(int)ang);
+						qrImage = ImageProcessing.rotate(qrImage, -(int)ang);
+						small=ImageProcessing.rotate(small, -(int)ang);
 					}else if(cnt==2){
-						System.out.println("-rotacionado 30");
-						small=ImageProcessing.rotate(small, 30);
+						System.out.println("passa baixa horizontal");
+						ImageProcessing tmp=new ImageProcessing(small);
+						boolean[][] filtro = {{false,false,false,false,false},{true,true,true,true,true},{false,false,false,false,false}};
+						tmp.passaBaixa(filtro);
+						small = tmp.rgb2img();
 					}else if(cnt==3){
 						System.out.println("-100x100");
 						small=ImageProcessing.criarImagemRedimensionada(small, 100);
@@ -775,6 +818,9 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 					}else if(cnt==9){
 						System.out.println("qr rotacionado 45");
 						small=ImageProcessing.rotate(qrImage, 45);
+					}else if(cnt==10){
+						System.out.println("-redimensionado 200x200");
+						small=ImageProcessing.criarImagemRedimensionada(small, 200);
 					}else{
 						result="";
 					}
@@ -790,8 +836,62 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 				 int p2 = Integer.parseInt(parts[1]);
 				 if(p2>p1)result = ""+p2+":"+p1;
 			 }
+			*/
+		}
+	
+		private BufferedImage mudaImagem(BufferedImage qrImg, String instr, int ang){
+			if(instr.compareTo("pb")==0){
+				ImageProcessing tmp=new ImageProcessing(qrImg);
+				tmp.createMatrix(new configThresh());
+				qrImg=tmp.matrix2img(tmp.m);
+			}
 			
-			return result;
+			else if(instr.compareTo("rotateang")==0){
+				qrImg = ImageProcessing.rotate(qrImg, -ang);
+			}else if(instr.compareTo("rotate45")==0){
+				qrImg = ImageProcessing.rotate(qrImg, 45);
+			}
+			
+			else if(instr.compareTo("passabaixa")==0){
+				ImageProcessing tmp=new ImageProcessing(qrImg);
+				boolean[][] filtro = {{false,false,false,false,false},{true,true,true,true,true},{false,false,false,false,false}};
+				tmp.passaBaixa(filtro);
+				qrImg = tmp.rgb2img();
+			}
+			
+			else if(instr.compareTo("tamanho100")==0){
+				qrImg=ImageProcessing.criarImagemRedimensionada(qrImg, 100);
+			}else if(instr.compareTo("tamanho200")==0){
+				qrImg=ImageProcessing.criarImagemRedimensionada(qrImg, 200);
+			}
+			return qrImg;
+		}
+		
+		class configThresh extends ConfigImageProcessing{
+			public boolean checkThreshold(int r, int g, int b, int rAvg, int gAvg, int bAvg){
+				return r + g + b < (rAvg + gAvg + bAvg - 50) && !(r>g+10 && r>b+10 && r>150);
+			}
+		}
+		
+		private String lerQr2(BufferedImage qrImg){
+			QRCodeReader reader=new QRCodeReader();
+			Map<DecodeHintType,Object> tmpHintsMap = new EnumMap<DecodeHintType, Object>(DecodeHintType.class);
+			tmpHintsMap.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
+			BinaryBitmap bitmap = null;
+			
+			try{
+				int cnt2=0;
+				File outputfile = new File("/home/samuelkato/qrZoado-"+(cnt2)+".png");
+				while(outputfile.exists()){
+					outputfile = new File("/home/samuelkato/qrZoado-"+(++cnt2)+".png");
+				}
+				ImageIO.write(qrImg, "png", outputfile);
+				
+				bitmap = new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(qrImg)));
+				return reader.decode(bitmap,tmpHintsMap).getText();
+			}catch(Exception e){
+			}
+			return null;
 		}
 		
 		/**

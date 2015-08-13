@@ -44,6 +44,8 @@ public class ImageProcessing {
 		this.rAvg = (int)(red/(width*height));
 		this.gAvg = (int)(green/(width*height));
 		this.bAvg = (int)(blue/(width*height));
+		
+		this.createMatrix();
 	}
 	
 	/*
@@ -75,7 +77,7 @@ public class ImageProcessing {
 		this.createMatrix();
 	}
 	*/
-	public boolean[][] createMatrix(){
+	private boolean[][] createMatrix(){
 		this.m=createMatrix(new ConfigImageProcessing());
 		return this.m;
 	}
@@ -105,7 +107,9 @@ public class ImageProcessing {
 		int height=img.getHeight();
 		
 		//para agilizar nos angulos de 90,180,-90
-		if(angle==90){
+		if(angle==0){
+			return img;
+		}if(angle==90){
 			BufferedImage imgRot = new BufferedImage(height,width,BufferedImage.TYPE_INT_RGB);
 			for(int y=0; y<height; y++){
 				for(int x=0; x<width; x++){
@@ -222,6 +226,26 @@ public class ImageProcessing {
 		return img;
 	}
 	
+	public BufferedImage rgb2img(){
+		return rgb2img(this.oRgb);
+	}
+	
+	public BufferedImage rgb2img(int[][][] oRgb){
+		int height = oRgb.length;
+		int width = oRgb[0].length;
+		BufferedImage img = new BufferedImage(width,height,BufferedImage.TYPE_INT_RGB);
+		for (int x = 0; x < width; x++) {
+			for (int y = 0; y < height; y++) {
+				long color = (long)this.img.getRGB(x, y);
+				
+				color = (oRgb[y][x][0] << 16) | (oRgb[y][x][1] << 8) | (oRgb[y][x][2]);
+				
+				img.setRGB(x, y, (int)color);
+			}
+		}
+		return img;
+	}
+	
 	public void saveFilteredImage(String fileName,int[][] m){
 		int height=m.length;
 		int width=m[0].length;
@@ -253,6 +277,38 @@ public class ImageProcessing {
 		}catch (Exception e) {
 			
 		}
+	}
+	
+	public void passaBaixa(boolean[][] filtro){
+		int[][][] oRgbOut = new int[height][width][3];
+		int hf = filtro.length;
+		int wf = filtro[0].length;
+		int cy = (int)hf/2;
+		int cx = (int)wf/2;
+		
+		for(int y = 0; y < height; y++){
+			for(int x = 0; x < width; x++){
+				int[] aCor = new int[3];
+				int div = 0;
+				for(int yf = y - cy; yf < y + cy; yf++){
+					if(yf < 0 || yf >= height) continue;
+					for(int xf = x - cx; xf < x + cx; xf++){
+						if(xf < 0 || xf >= width) continue;
+						if(filtro[yf - (y - cy)][xf - (x - cx)]){
+							for(int i = 0; i < 3; i++){
+								aCor[i] += this.oRgb[yf][xf][i];
+							}
+							div++;
+						}
+					}
+				}
+				for(int i = 0; i < 3; i++){
+					oRgbOut[y][x][i] = aCor[i] / div;
+				}
+			}
+		}
+		
+		this.oRgb = oRgbOut;
 	}
 	
 	// Correct, but creates a copy of the image which is inefficient
@@ -445,7 +501,7 @@ class ConfigImageProcessing{
 					&& ( b < bAvg - 30 || b < 40 )	//cores mais escuras q a media-20
 					&& !( r > g+60 && r > b+60 )	//cores vermelhas
 				)
-				|| ( b > g+50 && b > r+50 )
+				|| ( b > g+10 && b > r+10 )
 		;
 		
 		//return !(r+g+b>700 || r>180);
