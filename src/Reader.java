@@ -753,7 +753,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 			BinaryBitmap bitmap = null;
 			
 			try{
-				int cnt2=0;
+//				int cnt2=0;
 //				File outputfile = new File("/home/samuelkato/qrZoado-"+(cnt2)+".png");
 //				while(outputfile.exists()){
 //					outputfile = new File("/home/samuelkato/qrZoado-"+(++cnt2)+".png");
@@ -826,6 +826,10 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 		}
 		
 		class ErrAng extends Exception{
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
 			public int ang = 0;
 			public ErrAng(int ang){
 				this.ang = ang;
