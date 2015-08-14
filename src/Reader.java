@@ -716,127 +716,6 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 
 			
 			return "";
-			
-			
-			
-			/*
-			
-			
-			
-			
-			int[] aRot = {0,45,(int)ang};
-			for(int rot : aRot){
-				BufferedImage small = ImageProcessing.rotate(qrImage, rot);
-				
-			}
-			
-			BufferedImage[] aQrImgs = {qrImage};
-			int cnt=0;
-			while(cnt < aQrImgs.length){
-				BufferedImage small = aQrImgs[cnt];
-				BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(small)));
-				
-				try{
-					result=reader.decode(bitmap,tmpHintsMap).getText();
-				}catch(Exception e){
-				cnt++;
-			}
-			
-			//clone
-			BufferedImage small=qrImage.getSubimage(0, 0, qrImage.getWidth(), qrImage.getHeight());
-			
-
-			BufferedImage bwImg=null;
-
-			
-			
-			while(result==null){
-				
-				BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(small)));
-				
-				/* salva imagem zoada na pasta pessoal */
-//				try{
-//					int cnt2=0;
-//					File outputfile = new File("/home/samuelkato/qrZoado-"+(cnt2)+".png");
-//					while(outputfile.exists()){
-//						outputfile = new File("/home/samuelkato/qrZoado-"+(++cnt2)+".png");
-//					}
-//					ImageIO.write(small, "png", outputfile);
-//					
-//					File fileSaida=new File("/home/samuelkato/qrZoado-"+(cnt2)+".txt");
-//					if (!fileSaida.exists())fileSaida.createNewFile();
-//					
-//					FileWriter fw = new FileWriter(fileSaida.getAbsoluteFile());
-//					BufferedWriter bw = new BufferedWriter(fw);
-//					
-//					bw.write(bitmap.toString());
-//					bw.close();
-//					
-//				}catch(Exception e3){
-//					System.out.println(e3.getMessage());
-//				}
-				/* fim salva imagem zoada na pasta pessoal */
-				/*
-				try{
-					result=reader.decode(bitmap,tmpHintsMap).getText();
-				}catch(Exception e){
-					if(cnt==0){
-						System.out.println("qr preto e branco");
-						ImageProcessing tmp=new ImageProcessing(qrImage);
-						tmp.createMatrix(new configThresh());
-						small=tmp.matrix2img(tmp.m);
-						bwImg=small.getSubimage(0, 0, small.getWidth(), small.getHeight());
-					}else if(cnt==1){
-						
-						System.out.println("-rotacionado -"+(int)ang);
-						qrImage = ImageProcessing.rotate(qrImage, -(int)ang);
-						small=ImageProcessing.rotate(small, -(int)ang);
-					}else if(cnt==2){
-						System.out.println("passa baixa horizontal");
-						ImageProcessing tmp=new ImageProcessing(small);
-						boolean[][] filtro = {{false,false,false,false,false},{true,true,true,true,true},{false,false,false,false,false}};
-						tmp.passaBaixa(filtro);
-						small = tmp.rgb2img();
-					}else if(cnt==3){
-						System.out.println("-100x100");
-						small=ImageProcessing.criarImagemRedimensionada(small, 100);
-					}else if(cnt==4){
-						System.out.println("-rotacionado 45");
-						small=ImageProcessing.rotate(small, 45);
-					}else if(cnt==5){
-						System.out.println("qr preto e branco e redimensionado 100x100");
-						small=ImageProcessing.criarImagemRedimensionada(bwImg, 100);
-					}else if(cnt==6){
-						System.out.println("-rotacionado 45");
-						small=ImageProcessing.rotate(small, 45);
-					}else if(cnt==7){
-						System.out.println("qr redimensionado 100x100");
-						small=ImageProcessing.criarImagemRedimensionada(qrImage, 100);
-					}else if(cnt==8){
-						System.out.println("redimensionado 100x100 e rotacionado 45");
-						small=ImageProcessing.rotate(small, 45);
-					}else if(cnt==9){
-						System.out.println("qr rotacionado 45");
-						small=ImageProcessing.rotate(qrImage, 45);
-					}else if(cnt==10){
-						System.out.println("-redimensionado 200x200");
-						small=ImageProcessing.criarImagemRedimensionada(small, 200);
-					}else{
-						result="";
-					}
-					cnt++;
-				}
-			}
-			
-			//System.out.println((System.nanoTime()-startTime)/1000000000);
-			//inverter qr de alunoID:provaID => provaID:alunoID
-			 String[] parts = result.split(":");
-			 if(parts.length==2){
-				 int p1 = Integer.parseInt(parts[0]);
-				 int p2 = Integer.parseInt(parts[1]);
-				 if(p2>p1)result = ""+p2+":"+p1;
-			 }
-			*/
 		}
 	
 		private BufferedImage mudaImagem(BufferedImage qrImg, String instr, int ang){
@@ -865,12 +744,6 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 				qrImg=ImageProcessing.criarImagemRedimensionada(qrImg, 200);
 			}
 			return qrImg;
-		}
-		
-		class configThresh extends ConfigImageProcessing{
-			public boolean checkThreshold(int r, int g, int b, int rAvg, int gAvg, int bAvg){
-				return r + g + b < (rAvg + gAvg + bAvg - 50) && !(r>g+10 && r>b+10 && r>150);
-			}
 		}
 		
 		private String lerQr2(BufferedImage qrImg){
@@ -956,6 +829,12 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 			public int ang = 0;
 			public ErrAng(int ang){
 				this.ang = ang;
+			}
+		}
+
+		class configThresh extends ConfigImageProcessing{
+			public boolean checkThreshold(int r, int g, int b, int rAvg, int gAvg, int bAvg){
+				return r + g + b < (rAvg + gAvg + bAvg - 50) && !(r>g+10 && r>b+10 && r>150);
 			}
 		}
 		
