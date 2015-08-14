@@ -881,11 +881,11 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 			
 			try{
 				int cnt2=0;
-				File outputfile = new File("/home/samuelkato/qrZoado-"+(cnt2)+".png");
-				while(outputfile.exists()){
-					outputfile = new File("/home/samuelkato/qrZoado-"+(++cnt2)+".png");
-				}
-				ImageIO.write(qrImg, "png", outputfile);
+//				File outputfile = new File("/home/samuelkato/qrZoado-"+(cnt2)+".png");
+//				while(outputfile.exists()){
+//					outputfile = new File("/home/samuelkato/qrZoado-"+(++cnt2)+".png");
+//				}
+//				ImageIO.write(qrImg, "png", outputfile);
 				
 				bitmap = new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(qrImg)));
 				return reader.decode(bitmap,tmpHintsMap).getText();
