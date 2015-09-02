@@ -573,7 +573,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 			double a=-(double)(ponto1.centrox-ponto2.centrox)/(double)(ponto1.centroy-ponto2.centroy);
 			double a2=(double)(ponto2.centroy-ponto3.centroy)/(double)(ponto2.centrox-ponto3.centrox);
 		
-			ret = Math.abs(a2-a)<0.01;
+			ret = Math.abs(a2-a)<0.03;
 			return ret;
 		}
 		
