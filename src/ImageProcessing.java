@@ -2,6 +2,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.security.MessageDigest;
 import java.util.List;
 import java.util.Vector;
@@ -11,13 +12,22 @@ import javax.imageio.ImageIO;
 
 public class ImageProcessing {
 	BufferedImage img=null;
+	String filename;
 	boolean[][] m=null;
 	byte[] mByte;
 	boolean[][] mInv=null;
 	int rAvg,gAvg,bAvg,width,height;
 	int[][][] oRgb=null;
 
-	public ImageProcessing(BufferedImage img, boolean rodar) {
+	public ImageProcessing(File fileEntry, boolean rodar) throws IOException {
+		this.filename = fileEntry.getName();
+		BufferedImage img = ImageIO.read(fileEntry);
+		img.getType();//soh pra levantar uma Exception e nao processa o arquivo
+		this.img = criarImagemRedimensionada(img, 1000);
+		this.reloadImg();
+		if(rodar)createMatrix();
+	}	
+	public ImageProcessing(BufferedImage img, boolean rodar){
 		this.img = criarImagemRedimensionada(img, 1000);
 		this.reloadImg();
 		if(rodar)createMatrix();

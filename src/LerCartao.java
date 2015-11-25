@@ -52,7 +52,8 @@ public class LerCartao{
 			}
 			
 			String qr = lerQr(clImg, pontosRef);
-			
+
+			saidaHt.put("filename", "\""+clImg.filename.replace("\"", "\\\"")+"\"");
 			saidaHt.put("qr", "\""+qr+"\"");
 			System.out.println("qr: "+qr);
 			
