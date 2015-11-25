@@ -68,6 +68,7 @@ public class Pool {
 	}
 	public void retiraTotal(int n) {
 		total -= n;
+		processaFolder.mudarProgresso((int)Math.floor(((float)++jaFoi/total)*100));
 	}
 	public void addMsg(String saidaAt) {
 		processaFolder.reader.taskOutput.append(saidaAt+"\n");

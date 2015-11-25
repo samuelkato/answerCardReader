@@ -18,7 +18,7 @@ public class ImageProcessing {
 	int[][][] oRgb=null;
 
 	public ImageProcessing(BufferedImage img, boolean rodar) {
-		this.img = criarImagemRedimensionada(this.img, 1000);
+		this.img = criarImagemRedimensionada(img, 1000);
 		this.reloadImg();
 		if(rodar)createMatrix();
 	}

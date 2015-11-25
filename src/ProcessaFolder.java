@@ -15,7 +15,7 @@ import javax.swing.SwingWorker;
 class ProcessaFolder extends SwingWorker<Void, Void> {
 	private File folder;
 	private ZipOutputStream zipSaida;
-	public int nConsumidores = 3;
+	public int nConsumidores = 2;
 	public Reader reader;
 	/**
 	 * contrutora da classe
@@ -74,7 +74,7 @@ class ProcessaFolder extends SwingWorker<Void, Void> {
 		}
 		
 		String saida="[\n"+conteudo+"\n]";
-		this.reader.taskOutput.append("Fim da pasta "+pastaAt+"\n");
+		this.reader.taskOutput.append("Fim da pasta "+pastaAt+"\n\n");
 		System.out.println("Fim da pasta "+pastaAt+"\n");
 		
 		
