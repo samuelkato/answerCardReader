@@ -1,7 +1,5 @@
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.security.MessageDigest;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -11,9 +9,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Vector;
-import java.util.zip.ZipEntry;
 
-import javax.imageio.ImageIO;
+
 
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.DecodeHintType;
@@ -22,15 +19,17 @@ import com.google.zxing.common.HybridBinarizer;
 import com.google.zxing.qrcode.QRCodeReader;
 
 
-public class LerCartao extends Thread{
+public class LerCartao{
 	ImageProcessing clImg;
-	public LerCartao(BufferedImage file) {
-		this.clImg=new ImageProcessing(file);
-		// TODO Auto-generated constructor stub
-	}
-	@Override
-	public void run() {
-		String saida="";
+	String saida = "";
+	
+	/*public LerCartao(ImageProcessing clImg, ZipOutputStream zipSaida) {
+		return;
+	}*/
+	public LerCartao(ImageProcessing clImg) {
+		this.clImg=clImg;
+		this.clImg.createMatrix();
+		//this.clImg.reloadImg2();
 		Hashtable<String,String> saidaHt = new Hashtable<String,String>();
 		//clImg.createMatrix();
 		//clImg.m=clImg.dilate(clImg.m);
@@ -112,26 +111,8 @@ public class LerCartao extends Thread{
 			saidaHt.put("msg", "\""+e.getMessage()+"\"");
 		}
 		
-		String formatoImg = "jpg";
 		
-		BufferedImage imgRes = clImg.img;
-
-		String nomeImgZip = md5Hash(imgRes) + "." + formatoImg;
 		
-		/*try{
-			zipSaida.putNextEntry(new ZipEntry(nomeImgZip));
-			ImageIO.write(imgRes, formatoImg, zipSaida);
-			zipSaida.closeEntry();
-			
-			//passar saidaHt para json
-			saidaHt.put("file", "\""+nomeImgZip+"\"");
-			
-			
-		}catch(Exception e){
-			//unico caso em que a imagem nao vai para o zip
-			throw new Exception("imagemRepetida");
-		}
-		return saida;*/
 		Enumeration<String> enumKey = saidaHt.keys();
 		while(enumKey.hasMoreElements()){
 			String key = enumKey.nextElement();
@@ -140,33 +121,9 @@ public class LerCartao extends Thread{
 			saida += "\""+key+"\""+":"+val;
 		}
 		saida="{"+saida+"}";
-		System.out.println(saida);
 	}
 
-	/**
-	 * retorna o md5 hash de uma imagem
-	 * */
-	private String md5Hash(BufferedImage img){
-		String hexString = "";
-		try{
-			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-			ImageIO.write(img, "png", outputStream);
-			byte[] data = outputStream.toByteArray();
-
-			MessageDigest md = MessageDigest.getInstance("MD5");
-			md.update(data);
-			
-			byte[] inBytes=md.digest();
-			for (int i=0; i < inBytes.length; i++) { //for loop ID:1
-				hexString +=
-				Integer.toString( ( inBytes[i] & 0xff ) + 0x100, 16).substring( 1 );
-			}
-		}catch(Exception e){
-			e.printStackTrace();
-			return "";
-		}
-		return hexString;
-	}
+	
 	
 	
 
@@ -510,7 +467,7 @@ public class LerCartao extends Thread{
 
 	private BufferedImage mudaImagem(BufferedImage qrImg, String instr, int ang){
 		if(instr.compareTo("pb")==0){
-			ImageProcessing tmp=new ImageProcessing(qrImg);
+			ImageProcessing tmp=new ImageProcessing(qrImg,true);
 			tmp.createMatrix(new configThresh());
 			qrImg=tmp.matrix2img(tmp.m);
 		}
@@ -522,7 +479,7 @@ public class LerCartao extends Thread{
 		}
 		
 		else if(instr.compareTo("passabaixa")==0){
-			ImageProcessing tmp=new ImageProcessing(qrImg);
+			ImageProcessing tmp=new ImageProcessing(qrImg,true);
 			boolean[][] filtro = {{false,false,false,false,false},{true,true,true,true,true},{false,false,false,false,false}};
 			tmp.passaBaixa(filtro);
 			qrImg = tmp.rgb2img();
@@ -659,6 +616,15 @@ public class LerCartao extends Thread{
 			else if(o1.getFieldInt(this.chave)==o2.getFieldInt(this.chave))return 0;
 			else return retPri;
 		}
+	}
+	
+	public String getSaida(){
+		return saida;
+	}
+
+
+	public String md5Hash() {
+		return clImg.md5Hash();
 	}
 	
 }

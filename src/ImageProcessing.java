@@ -1,6 +1,8 @@
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.security.MessageDigest;
 import java.util.List;
 import java.util.Vector;
 
@@ -11,12 +13,15 @@ public class ImageProcessing {
 	BufferedImage img=null;
 	BufferedImage imgOrig = null;
 	boolean[][] m=null;
+	byte[] mByte;
 	boolean[][] mInv=null;
 	int rAvg,gAvg,bAvg,width,height;
 	int[][][] oRgb=null;
-	public ImageProcessing(BufferedImage img) {
+
+	public ImageProcessing(BufferedImage img, boolean rodar) {
 		this.imgOrig = img;
 		this.reloadImg();
+		if(rodar)createMatrix();
 	}
 	
 	private void reloadImg(){
@@ -25,6 +30,7 @@ public class ImageProcessing {
 		this.height = this.img.getHeight();
 		this.m = new boolean[this.height][this.width];
 		this.mInv = new boolean[this.height][this.width];
+		this.mByte = new byte[this.height * this.width];
 		this.oRgb = new int[height][width][3];
 		
 		long red=0;
@@ -32,20 +38,16 @@ public class ImageProcessing {
 		long blue=0;
 		for (int x = 0; x < width; x++) {
 			for (int y = 0; y < height; y++) {
-				long color = (long)this.img.getRGB(x, y);
-				this.oRgb[y][x][0] = (int)((color >> 16) & 0xff) ;
-				this.oRgb[y][x][1] = (int)((color >> 8) & 0xff) ;
-				this.oRgb[y][x][2] = (int)(color & 0xff);
-				red += this.oRgb[y][x][0];
-				green += this.oRgb[y][x][1];
-				blue += this.oRgb[y][x][2];
+				Color c = new Color(this.img.getRGB(x, y));
+				red += (this.oRgb[y][x][0] = c.getRed());
+				green += (this.oRgb[y][x][1] = c.getGreen());
+				blue += (this.oRgb[y][x][2] = c.getBlue());
 			}
 		}
 		this.rAvg = (int)(red/(width*height));
 		this.gAvg = (int)(green/(width*height));
 		this.bAvg = (int)(blue/(width*height));
 		
-		this.createMatrix();
 	}
 	
 	/*
@@ -77,12 +79,12 @@ public class ImageProcessing {
 		this.createMatrix();
 	}
 	*/
-	private boolean[][] createMatrix(){
+	public boolean[][] createMatrix(){		
 		this.m=createMatrix(new ConfigImageProcessing());
 		return this.m;
 	}
 	public boolean[][] createMatrix(ConfigImageProcessing clComp){
-		//System.out.println(red+","+green+","+blue);
+		int cnt=0;
 		for (int x = 0; x < width; x++) {
 			for (int y = 0; y < height; y++) {
 				int r=this.oRgb[y][x][0];
@@ -90,6 +92,7 @@ public class ImageProcessing {
 				int b=this.oRgb[y][x][2];
 				this.m[y][x]=clComp.checkThreshold(r, g, b, this.rAvg, this.gAvg, this.bAvg);
 				this.mInv[y][x]=!this.m[y][x];
+				this.mByte[cnt++] = (byte) (this.m[y][x] ? '1' : '0');
 			}
 		}
 		return this.m;
@@ -476,6 +479,25 @@ public class ImageProcessing {
 			}
 		}
 		return reg;
+	}
+
+	public String md5Hash(){
+		String hexString = "";
+		try{
+
+			MessageDigest md = MessageDigest.getInstance("MD5");
+			md.update(this.mByte);
+			
+			byte[] inBytes=md.digest();
+			for (int i=0; i < inBytes.length; i++) { //for loop ID:1
+				hexString +=
+				Integer.toString( ( inBytes[i] & 0xff ) + 0x100, 16).substring( 1 );
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+			return "";
+		}
+		return hexString;
 	}
 }
 class ConfigImageProcessing{
