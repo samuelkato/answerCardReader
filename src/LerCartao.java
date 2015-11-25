@@ -10,6 +10,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Vector;
 
+import javax.imageio.ImageIO;
+
+import java.io.File;
+
 
 
 import com.google.zxing.BinaryBitmap;
@@ -53,7 +57,7 @@ public class LerCartao{
 			
 			String qr = lerQr(clImg, pontosRef);
 
-			saidaHt.put("filename", "\""+clImg.filename.replace("\"", "\\\"")+"\"");
+			saidaHt.put("orig", "\""+clImg.filename.replace("\"", "\\\"")+"\"");
 			saidaHt.put("qr", "\""+qr+"\"");
 			System.out.println("qr: "+qr);
 			
@@ -442,9 +446,10 @@ public class LerCartao{
 		BufferedImage file = clImg.img;
 		int rWidth = clImg.width;
 		float prop=(float)file.getWidth()/(float)rWidth;
-		BufferedImage qrImage=file.getSubimage((int)((pontosRef.get(1).centrox+165)*prop), (int)(Math.max(0,(pontosRef.get(1).centroy-130)*prop)), (int)(160*prop), (int)(160*prop));
+		int posY = (pontosRef.get(1).centroy + pontosRef.get(2).centroy) / 2;
+		BufferedImage qrImage=file.getSubimage((int)((pontosRef.get(1).centrox+155)*prop), (int)(Math.max(0,(posY-170)*prop)), (int)(180*prop), (int)(180*prop));
 		
-		String[] mInstr = {"","tamanho100","tamanho200","pb","rotateang","rotate45","passabaixa"};
+		String[] mInstr = {"","crop","tamanho100","tamanho200","pb","rotateang","rotate45","passabaixa"};
 		
 		for(int i = 0; i < mInstr.length; i++){
 			BufferedImage qrImg=qrImage.getSubimage(0, 0, qrImage.getWidth(), qrImage.getHeight());
@@ -489,6 +494,10 @@ public class LerCartao{
 			qrImg=ImageProcessing.criarImagemRedimensionada(qrImg, 100);
 		}else if(instr.compareTo("tamanho200")==0){
 			qrImg=ImageProcessing.criarImagemRedimensionada(qrImg, 200);
+		}
+		
+		else if(instr.compareTo("crop")==0){
+			qrImg=qrImg.getSubimage(10, 10, qrImg.getWidth() - 20, qrImg.getHeight() - 20);
 		}
 		return qrImg;
 	}
