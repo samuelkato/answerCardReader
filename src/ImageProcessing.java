@@ -11,7 +11,6 @@ import javax.imageio.ImageIO;
 
 public class ImageProcessing {
 	BufferedImage img=null;
-	BufferedImage imgOrig = null;
 	boolean[][] m=null;
 	byte[] mByte;
 	boolean[][] mInv=null;
@@ -19,13 +18,12 @@ public class ImageProcessing {
 	int[][][] oRgb=null;
 
 	public ImageProcessing(BufferedImage img, boolean rodar) {
-		this.imgOrig = img;
+		this.img = criarImagemRedimensionada(this.img, 1000);
 		this.reloadImg();
 		if(rodar)createMatrix();
 	}
 	
 	private void reloadImg(){
-		this.img = criarImagemRedimensionada(this.imgOrig, 1000);
 		this.width = this.img.getWidth();
 		this.height = this.img.getHeight();
 		this.m = new boolean[this.height][this.width];
@@ -167,7 +165,7 @@ public class ImageProcessing {
 	}
 	
 	public void rotate(int angle){
-		this.imgOrig = ImageProcessing.rotate(this.imgOrig, angle);
+		this.img= ImageProcessing.rotate(this.img, angle);
 		this.reloadImg();
 		this.createMatrix();
 	}

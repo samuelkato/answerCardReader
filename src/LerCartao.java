@@ -26,7 +26,7 @@ public class LerCartao{
 	/*public LerCartao(ImageProcessing clImg, ZipOutputStream zipSaida) {
 		return;
 	}*/
-	public LerCartao(ImageProcessing clImg) {
+	public LerCartao(ImageProcessing clImg, Pool pool) {
 		this.clImg=clImg;
 		this.clImg.createMatrix();
 		//this.clImg.reloadImg2();
@@ -47,7 +47,7 @@ public class LerCartao{
 				pontosRef = procurar3pontos(clImg);
 			}catch(ErrAng $e){
 				System.out.println("Imagem rotacionada "+$e.ang);
-				clImg.rotate($e.ang);
+				pool.rotateImg(clImg, $e.ang);
 				pontosRef = procurar3pontos(clImg);
 			}
 			
@@ -120,7 +120,6 @@ public class LerCartao{
 			if(saida != "") saida += ",";
 			saida += "\""+key+"\""+":"+val;
 		}
-		saida="{"+saida+"}";
 	}
 
 	
@@ -439,7 +438,7 @@ public class LerCartao{
 		//long startTime = System.nanoTime();
 		int ang = (int)(Math.atan2(pontosRef.get(2).centroy - pontosRef.get(1).centroy, pontosRef.get(2).centrox - pontosRef.get(1).centrox)*180/Math.PI);
 		
-		BufferedImage file = clImg.imgOrig;
+		BufferedImage file = clImg.img;
 		int rWidth = clImg.width;
 		float prop=(float)file.getWidth()/(float)rWidth;
 		BufferedImage qrImage=file.getSubimage((int)((pontosRef.get(1).centrox+165)*prop), (int)(Math.max(0,(pontosRef.get(1).centroy-130)*prop)), (int)(160*prop), (int)(160*prop));

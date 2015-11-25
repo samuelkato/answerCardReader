@@ -33,7 +33,7 @@ public class Pool {
 		return ret;
 	}
 	public synchronized void add(ImageProcessing value) {
-		while(contents.size()>10){
+		while(contents.size()>5){
 			System.out.println("parou de add");
 			try {
 				wait();
@@ -71,5 +71,8 @@ public class Pool {
 	}
 	public void addMsg(String saidaAt) {
 		processaFolder.reader.taskOutput.append(saidaAt+"\n");
+	}
+	public void rotateImg(ImageProcessing clImg, int ang){
+		clImg.rotate(ang);
 	}
 }

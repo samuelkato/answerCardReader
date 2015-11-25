@@ -11,11 +11,11 @@ public class Consumidor extends Thread {
 		while(pool.aindaTem()){
 			ImageProcessing clImg = pool.get();
 			if(clImg != null){
-				LerCartao cartao = new LerCartao(clImg);
+				LerCartao cartao = new LerCartao(clImg, pool);
 				String md5Hash = cartao.md5Hash();
 				String nomeImgZip = pool.salvarZip(md5Hash, "jpg", clImg.img);
 				if(saida.length()!=0)saida+=",\n";
-				String saidaAt ="{\"file\":\""+nomeImgZip+"\",\"json\":"+cartao.getSaida()+"}";
+				String saidaAt ="{\"file\":\""+nomeImgZip+"\","+cartao.getSaida()+"}";
 				pool.addMsg(saidaAt);
 				saida+="\t"+saidaAt;
 			}
