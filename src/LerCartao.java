@@ -10,12 +10,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Vector;
 
-import javax.imageio.ImageIO;
-
-import java.io.File;
-
-
-
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.DecodeHintType;
 import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
