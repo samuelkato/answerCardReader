@@ -81,9 +81,9 @@ class ProcessaFolder extends SwingWorker<Void, Void> {
 		//File fileSaida=new File(pastaAt+"/saida.json");
 		try {
 			//if (!fileSaida.exists())fileSaida.createNewFile();
-			
+			//saida = new String(saida.getBytes(), "UTF-8");
 			zipSaida.putNextEntry(new ZipEntry("saida.json"));
-			zipSaida.write(saida.getBytes());
+			zipSaida.write(saida.getBytes("UTF-8"));
 			zipSaida.closeEntry();
 			
 			//taskOutput.append("Json gravado com sucesso em: "+fileSaida.getAbsolutePath()+"\n\n");
