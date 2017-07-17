@@ -52,6 +52,7 @@ class ProcessaFolder extends SwingWorker<Void, Void> {
 		
 		this.reader.taskOutput.append("Inicio do processamento na pasta: "+pastaAt+"\n");
 		System.out.println("Inicio do processamento na pasta: "+pastaAt);
+		long startTime = System.currentTimeMillis();
 		
 		final File[] a=folder.listFiles();
 		Pool pool = new Pool(zipSaida, this);
@@ -72,10 +73,13 @@ class ProcessaFolder extends SwingWorker<Void, Void> {
 				e.printStackTrace();
 			}
 		}
+
+		// ... do something ...
+		long estimatedTime = System.currentTimeMillis() - startTime;
 		
 		String saida="[\n"+conteudo+"\n]";
-		this.reader.taskOutput.append("Fim da pasta "+pastaAt+"\n\n");
-		System.out.println("Fim da pasta "+pastaAt+"\n");
+		this.reader.taskOutput.append("Fim da pasta "+pastaAt+" em "+(estimatedTime/1000)+"s\n\n");
+		System.out.println("Fim da pasta "+pastaAt+" em "+(estimatedTime/1000)+"s\n");
 		
 		
 		//File fileSaida=new File(pastaAt+"/saida.json");
@@ -99,6 +103,7 @@ class ProcessaFolder extends SwingWorker<Void, Void> {
 		}catch(Exception e){
 			e.printStackTrace();
 		}
+		
 		
 		return null;
 	}
