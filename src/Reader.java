@@ -14,6 +14,7 @@ import java.beans.*;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -32,6 +33,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 	private JProgressBar progressBar;
 	public JButton startButton;
 	public JTextArea taskOutput;
+	public JCheckBox chkDebug;
 	private ProcessaFolder task;
    
 	public static void main(String[] args) {
@@ -40,7 +42,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 		javax.swing.SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
 				//Create and set up the window.
-				JFrame frame = new JFrame("Ler Folha Resposta v6.4 paralelo");
+				JFrame frame = new JFrame("Ler Folha Resposta v6.5 paralelo");
 				frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		 
 				//Create and set up the content pane.
@@ -69,10 +71,14 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 		taskOutput = new JTextArea(10, 50);
 		taskOutput.setMargin(new Insets(5,5,5,5));
 		taskOutput.setEditable(false);
- 
+		
+		chkDebug = new JCheckBox("Debug");
+		chkDebug.setToolTipText("Criar Imagens de Diagnóstico");
+		
 		JPanel panel = new JPanel();
 		panel.add(startButton);
 		panel.add(progressBar);
+		panel.add(chkDebug);
  
 		add(panel, BorderLayout.PAGE_START);
 		add(new JScrollPane(taskOutput), BorderLayout.CENTER);
@@ -90,7 +96,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 				setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 				//Instances of javax.swing.SwingWorker are not reusuable, so
 				//we create new instances as needed.
-				task = new ProcessaFolder(chooser.getSelectedFile(), this);
+				task = new ProcessaFolder(chooser.getSelectedFile(), this, this.chkDebug.isSelected());
 				task.addPropertyChangeListener(this);
 				task.execute();
 			}

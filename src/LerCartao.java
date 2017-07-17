@@ -19,20 +19,22 @@ import com.google.zxing.qrcode.QRCodeReader;
 
 public class LerCartao{
 	ImageProcessing clImg;
+	private Boolean debug_;
 	String saida = "";
 	
 	/*public LerCartao(ImageProcessing clImg, ZipOutputStream zipSaida) {
 		return;
 	}*/
-	public LerCartao(ImageProcessing clImg, Pool pool) {
+	public LerCartao(ImageProcessing clImg, Pool pool, Boolean debug_) {
+		this.debug_ = debug_;
 		this.clImg=clImg;
 		this.clImg.createMatrix();
 		//this.clImg.reloadImg2();
 		Hashtable<String,String> saidaHt = new Hashtable<String,String>();
-		//clImg.createMatrix();
-		//clImg.m=clImg.dilate(clImg.m);
-		//clImg.saveFilteredImage("/home/samuelkato/sa1.bmp", clImg.bwlabel(clImg.m));
-		//clImg.saveFilteredImage("/home/samuelkato/sa.bmp", clImg.bwlabel());
+		if(this.debug_.booleanValue()){
+			clImg.saveFilteredImage(clImg.bwlabel(clImg.m),"-areas");
+			clImg.saveFilteredImage(clImg.bwlabel(),"-seila");
+		}
 		
 		try{
 			//file=rotate(file,45);
@@ -51,7 +53,6 @@ public class LerCartao{
 			
 			String qr = lerQr(clImg, pontosRef);
 
-			saidaHt.put("orig", "\""+clImg.filename.replace("\"", "\\\"")+"\"");
 			saidaHt.put("qr", "\""+qr+"\"");
 			System.out.println("qr: "+qr);
 			
@@ -59,6 +60,8 @@ public class LerCartao{
 			
 			
 			boolean[][] m = clImg.m;
+
+			//boolean[][] mPosLeitura = new boolean[m.length][m[0].length];
 			m = clImg.erode(m);
 			m = clImg.dilate(m);
 			//check number of questions
@@ -74,9 +77,10 @@ public class LerCartao{
 				for(int j=1;j<25;j++){
 					if((j-1)%6==0)continue;
 					
-					int x=(int)(clockDistX*j+clock1.centrox);
-					int y=(int)(x*aClock+bClock);
-					
+					int x=(int)(clockDistX*j+clock1.centrox)-1;
+					int y=(int)(x*aClock+bClock)+1;
+
+					//mPosLeitura[y][x] = true;
 					String marca=String.format(Locale.US, "%1$d",Math.round(conferirMarcacao(x,y,m)*100));
 
 					int quesN=(j-1)/6*colSize+i;
@@ -89,7 +93,8 @@ public class LerCartao{
 					}
 				}
 			}
-			//clImg.saveFilteredImage("/home/samuelkato/tmp1.bmp",m);
+			//clImg.saveFilteredImage(mPosLeitura,"posLeitura");
+			//clImg.saveFilteredImage(m,"bool");
 			
 			String questoes="[";
 			for (int i=0;i<colSize*4;i++) {
@@ -109,7 +114,7 @@ public class LerCartao{
 		}catch(Exception e){
 			saidaHt.put("msg", "\""+e.getMessage()+"\"");
 		}
-		
+		saidaHt.put("orig", "\""+clImg.path.replaceAll(".+\\/","").replace("\"", "\\\"")+"\"");
 		
 		
 		Enumeration<String> enumKey = saidaHt.keys();
@@ -441,25 +446,26 @@ public class LerCartao{
 		int rWidth = clImg.width;
 		float prop=(float)file.getWidth()/(float)rWidth;
 		int posY = (pontosRef.get(1).centroy + pontosRef.get(2).centroy) / 2;
-		BufferedImage qrImage=file.getSubimage((int)((pontosRef.get(1).centrox+155)*prop), (int)(Math.max(0,(posY-170)*prop)), (int)(180*prop), (int)(180*prop));
+		float propx = (float)(pontosRef.get(2).centrox-pontosRef.get(1).centrox)/1000;
+		
+		BufferedImage qrImage = file.getSubimage((int)((pontosRef.get(1).centrox+(300*propx))*prop), (int)(Math.max(0,(posY-170)*prop)), (int)(180*prop), (int)(180*prop));
 		
 		String[] mInstr = {"","crop","tamanho100","tamanho200","pb","rotateang","rotate45","passabaixa"};
 		
+		BufferedImage qrImg1,qrImg2,qrImg3;
+		
 		for(int i = 0; i < mInstr.length; i++){
-			BufferedImage qrImg=qrImage.getSubimage(0, 0, qrImage.getWidth(), qrImage.getHeight());
-			qrImg = mudaImagem(qrImg,mInstr[i],ang);
+			qrImg1 = qrImage.getSubimage(0, 0, qrImage.getWidth(), qrImage.getHeight());
+			qrImg1 = mudaImagem(qrImg1, mInstr[i], ang);
 			for(int j = 0; j < mInstr.length; j++){
-				qrImg = mudaImagem(qrImg,mInstr[j],ang);
+				qrImg2 = mudaImagem(qrImg1,mInstr[j],ang);
 				for(int k = 0; k < mInstr.length; k++){
-					qrImg = mudaImagem(qrImg,mInstr[k],ang);
-					result = lerQr2(qrImg);
+					qrImg3 = mudaImagem(qrImg2, mInstr[k],ang);
+					result = lerQr2(qrImg3,mInstr[i]+"."+mInstr[j]+"."+mInstr[k]);
 					if(result!=null)return result;
 				}
 			}
 		}
-		
-		
-
 		
 		return "";
 	}
@@ -496,19 +502,16 @@ public class LerCartao{
 		return qrImg;
 	}
 	
-	private String lerQr2(BufferedImage qrImg){
+	private String lerQr2(BufferedImage qrImg, String tipo){
 		QRCodeReader reader=new QRCodeReader();
 		Map<DecodeHintType,Object> tmpHintsMap = new EnumMap<DecodeHintType, Object>(DecodeHintType.class);
 		tmpHintsMap.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
 		BinaryBitmap bitmap = null;
 		
 		try{
-//			int cnt2=0;
-//			File outputfile = new File("/home/samuelkato/qrZoado-"+(cnt2)+".png");
-//			while(outputfile.exists()){
-//				outputfile = new File("/home/samuelkato/qrZoado-"+(++cnt2)+".png");
-//			}
-//			ImageIO.write(qrImg, "png", outputfile);
+			if(this.debug_){
+				this.clImg.saveImage(qrImg, "-qrImg-"+tipo);
+			}
 			
 			bitmap = new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(qrImg)));
 			return reader.decode(bitmap,tmpHintsMap).getText();
@@ -566,7 +569,8 @@ public class LerCartao{
 	
 	private float conferirMarcacao(int x,int y, boolean[][] m){
 		int cnt=0;
-		x+=1;//o x está um pouco à esquerda
+		//x+=2;//o x está um pouco à esquerda
+		//y+=2;
 		for(int i=x-4;i<x+5;i++){
 			for(int j=y-2;j<y+3;j++){
 				if(m[j][i])cnt++;

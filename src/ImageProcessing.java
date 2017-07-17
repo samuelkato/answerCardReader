@@ -12,7 +12,7 @@ import javax.imageio.ImageIO;
 
 public class ImageProcessing {
 	BufferedImage img=null;
-	String filename;
+	String path;
 	boolean[][] m=null;
 	byte[] mByte;
 	boolean[][] mInv=null;
@@ -20,7 +20,7 @@ public class ImageProcessing {
 	int[][][] oRgb=null;
 
 	public ImageProcessing(File fileEntry, boolean rodar) throws IOException {
-		this.filename = fileEntry.getName();
+		this.path = fileEntry.getPath();
 		BufferedImage img = ImageIO.read(fileEntry);
 		img.getType();//soh pra levantar uma Exception e nao processa o arquivo
 		this.img = criarImagemRedimensionada(img, 1000);
@@ -210,8 +210,53 @@ public class ImageProcessing {
 		return ImageProcessing.criarImagemRedimensionada(this.img, max);
 	}
 
-	public void saveFilteredImage(String fileName,boolean[][] m){
-		BufferedImage img = matrix2img(m);
+	public void saveFilteredImage(boolean[][] m, String tipo){
+		int height = m.length;
+		int width = m[0].length;
+		
+		int[][] mInt = new int[height][width];
+		for (int x = 0; x < width; x++) {
+			for (int y = 0; y < height; y++) {
+				mInt[y][x] = m[y][x] ? 1 : 0;
+			}
+		}
+		saveFilteredImage(mInt, tipo);
+	}
+	
+	public void saveFilteredImage(int[][] m, String tipo){
+		int height = m.length;
+		int width = m[0].length;
+		BufferedImage img = new BufferedImage(width,height,BufferedImage.TYPE_INT_RGB);
+		/*int[] cor=new int[100];
+		for(int i=0;i<100;i++){
+			cor[i]=(int)(Math.random()*255);
+			cor[i]=cor[i]<<8;
+			cor[i]=cor[i]|(int)(Math.random()*255);
+			cor[i]=cor[i]<<8;
+			cor[i]=cor[i]|(int)(Math.random()*255);
+		}*/
+		int[] cor=new int[3];
+		cor[0]=0xffdddd;
+		cor[1]=0xddffdd;
+		cor[2]=0xddddff;
+
+		for (int x = 0; x < width; x++) {
+			for (int y = 0; y < height; y++) {
+				if(m[y][x]!=0){
+					img.setRGB(x, y,cor[m[y][x]%cor.length]);
+				}else{
+					img.setRGB(x, y,0);
+				}
+			}
+		}
+		saveImage(img, tipo);
+	}
+	
+	public void saveImage(BufferedImage img, String tipo){
+		String fileName = this.path;
+		
+		int pos = fileName.lastIndexOf('.');
+		fileName = fileName.substring(0, pos)+tipo+".bmp";
 		
 		try{
 			ImageIO.write(img,"bmp",new File(fileName));
@@ -255,39 +300,6 @@ public class ImageProcessing {
 			}
 		}
 		return img;
-	}
-	
-	public void saveFilteredImage(String fileName,int[][] m){
-		int height=m.length;
-		int width=m[0].length;
-		BufferedImage img = new BufferedImage(width,height,BufferedImage.TYPE_INT_RGB);
-		/*int[] cor=new int[100];
-		for(int i=0;i<100;i++){
-			cor[i]=(int)(Math.random()*255);
-			cor[i]=cor[i]<<8;
-			cor[i]=cor[i]|(int)(Math.random()*255);
-			cor[i]=cor[i]<<8;
-			cor[i]=cor[i]|(int)(Math.random()*255);
-		}*/
-		int[] cor=new int[3];
-		cor[0]=0xffdddd;
-		cor[1]=0xddffdd;
-		cor[2]=0xddddff;
-
-		for (int x = 0; x < width; x++) {
-			for (int y = 0; y < height; y++) {
-				if(m[y][x]!=0){
-					img.setRGB(x, y,cor[m[y][x]%cor.length]);
-				}else{
-					img.setRGB(x, y,0);
-				}
-			}
-		}
-		try{
-			ImageIO.write(img,"bmp",new File(fileName));
-		}catch (Exception e) {
-			
-		}
 	}
 	
 	public void passaBaixa(boolean[][] filtro){
@@ -524,16 +536,19 @@ class ConfigImageProcessing{
 //				&& !(r>200 || g>200)		//mais de 200 r ou mais de 200 g
 //		;
 		//System.out.println(r+" "+rAvg);
-		return
-				(
-					( r < rAvg - 30 || r < 40 )
-					&& ( g < gAvg - 30  || g < 40 )
-					&& ( b < bAvg - 30 || b < 40 )	//cores mais escuras q a media-20
-					&& !( r > g+60 && r > b+60 )	//cores vermelhas
-				)
-				|| ( b > g+10 && b > r+10 )
-		;
-		
+		if( r > 220 && g > 220 && b > 220 ){
+			return false;
+		}else if( b > g+10 && b > r+10 ){
+			return true;
+		}else if( r > g+50 && r > b+50 ){
+			return false;
+		}else if(r < 100 && g < 100 && b < 100){
+			return true;
+		}else{
+			return  r < rAvg - 10 
+				&&  g < gAvg - 10
+				&&  b < bAvg - 10;
+		}
 		//return !(r+g+b>700 || r>180);
 	}
 	public boolean checkRegion(Region regAt){

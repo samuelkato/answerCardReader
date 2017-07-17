@@ -14,6 +14,7 @@ import javax.swing.SwingWorker;
  */
 class ProcessaFolder extends SwingWorker<Void, Void> {
 	private File folder;
+	private Boolean debug_;
 	private ZipOutputStream zipSaida;
 	public int nConsumidores = 2;
 	public Reader reader;
@@ -23,9 +24,10 @@ class ProcessaFolder extends SwingWorker<Void, Void> {
 	 * @param folder pasta a ser lida
 	 * @param reader 
 	 */
-	ProcessaFolder(File folder, Reader reader){
+	ProcessaFolder(File folder, Reader reader, Boolean debug_){
 		this.folder=folder;
 		this.reader = reader;
+		this.debug_ = debug_;
 	}
 
 	/**
@@ -60,7 +62,7 @@ class ProcessaFolder extends SwingWorker<Void, Void> {
 		p.start();
 		Consumidor[] aC = new Consumidor[nConsumidores];
 		for(int i = 0; i < nConsumidores; i++){
-			aC[i] = new Consumidor(pool);
+			aC[i] = new Consumidor(pool, this.debug_);
 			aC[i].start();
 		}
 		String conteudo = "";
