@@ -16,12 +16,13 @@ public class Consumidor extends Thread {
 				LerCartao cartao = new LerCartao(clImg, pool, this.debug_);
 				String md5Hash = cartao.md5Hash();
 				String nomeImgZip = pool.salvarZip(md5Hash, "jpg", clImg.img);
-				if(saida.length()!=0)saida+=",\n";
-				String saidaAt ="{\"file\":\""+nomeImgZip+"\","+cartao.getSaida()+"}";
-				pool.addMsg(saidaAt);
-				saida+="\t"+saidaAt;
+				if( nomeImgZip != null ){
+					if(saida.length()!=0)saida+=",\n";
+					String saidaAt ="{\"file\":\""+nomeImgZip+"\","+cartao.getSaida()+"}";
+					pool.addMsg(saidaAt);
+					saida+="\t"+saidaAt;
+				}
 			}
-			
 		}
 	}
 }
