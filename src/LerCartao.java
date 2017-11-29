@@ -114,7 +114,7 @@ public class LerCartao{
 		}catch(Exception e){
 			saidaHt.put("msg", "\""+e.getMessage()+"\"");
 		}
-		saidaHt.put("orig", "\""+clImg.path.replaceAll(".+\\/","").replace("\"", "\\\"")+"\"");
+		saidaHt.put("orig", "\""+clImg.path.replaceAll(".+\\/","").replace("\"", "\\\"").replace("\\", "\\\\")+"\"");
 		
 		
 		Enumeration<String> enumKey = saidaHt.keys();
