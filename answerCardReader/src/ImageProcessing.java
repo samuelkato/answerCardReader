@@ -6,7 +6,6 @@ import java.util.Vector;
 
 import javax.imageio.ImageIO;
 
-
 public class ImageProcessing {
 	public boolean[][]m;
 	public boolean[][]m2;
