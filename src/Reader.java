@@ -42,7 +42,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 		javax.swing.SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
 				//Create and set up the window.
-				JFrame frame = new JFrame("Ler Folha Resposta v6.5 paralelo");
+				JFrame frame = new JFrame("Ler Folha Resposta v6.7 paralelo");
 				frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		 
 				//Create and set up the content pane.

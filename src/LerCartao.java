@@ -150,13 +150,24 @@ public class LerCartao{
 //		clImg.saveFilteredImage("/home/samuelkato/tmp3.bmp", bwInv);
 		Exception $e = null;
 		List<Region> pontosRef=new Vector<Region>();
-		String[][] aInstr = {{},{"erode","dilate"},{"dilate","erode"},{"erode","dilate","dilate","erode"}};
+		String[][] aInstr = {{},{"erode","dilate"},{"dilate","erode"},{"erode","dilate","dilate","erode"},{"passabaixa","erode","dilate"}};
 		for(String[] aInstr2 : aInstr){
 			boolean[][] m = clImg.m;
 			for(String instr : aInstr2){
 				System.out.println(instr+" 3pontos");
 				if(instr.compareTo("erode")==0) m = clImg.erode(m);
 				else if(instr.compareTo("dilate")==0) m = clImg.dilate(m);
+				else if(instr.compareTo("passabaixa")==0) {
+					boolean[][] filtro = {{true,true,true},{true,true,true},{true,true,true}};
+					/*
+					ImageProcessing tmp=new ImageProcessing(clImg.img,true);
+					tmp.passaBaixa(filtro);
+					m = tmp.createMatrix();
+					/*/
+					clImg.passaBaixa(filtro);
+					m = clImg.createMatrix();
+					//*/
+				}
 			}
 			$e = null;
 			try{
