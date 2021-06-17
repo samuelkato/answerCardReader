@@ -150,7 +150,7 @@ public class LerCartao{
 //		clImg.saveFilteredImage("/home/samuelkato/tmp3.bmp", bwInv);
 		Exception $e = null;
 		List<Region> pontosRef=new Vector<Region>();
-		String[][] aInstr = {{},{"erode","dilate"},{"dilate","erode"},{"erode","dilate","dilate","erode"},{"passabaixa","erode","dilate"}};
+		String[][] aInstr = {{},{"erode","dilate"},{"dilate","erode"},{"erode","dilate","dilate","erode"},{"passabaixa"},{"passabaixa","erode","dilate"}};
 		for(String[] aInstr2 : aInstr){
 			boolean[][] m = clImg.m;
 			for(String instr : aInstr2){
@@ -159,7 +159,7 @@ public class LerCartao{
 				else if(instr.compareTo("dilate")==0) m = clImg.dilate(m);
 				else if(instr.compareTo("passabaixa")==0) {
 					boolean[][] filtro = {{true,true,true},{true,true,true},{true,true,true}};
-					/*
+					//*
 					ImageProcessing tmp=new ImageProcessing(clImg.img,true);
 					tmp.passaBaixa(filtro);
 					m = tmp.createMatrix();
@@ -174,8 +174,10 @@ public class LerCartao{
 				pontosRef = procurar3pontosTamanho(clImg, clImg.bwlabel(m));
 				break;
 			}catch(ErrAng $er){
+				System.out.println($er);
 				throw $er;
 			}catch(Exception $er){
+				System.out.println($er);
 				$e = $er;
 			}
 		}
@@ -203,7 +205,7 @@ public class LerCartao{
 		List<Region> regOut = clImg.filterRegions(clImg.regionProps(bw),config);
 		
 		List<Region> pontosRef=new Vector<Region>();
-		int folga = 3;
+		int folga = 5;
 		for(Region pIn : regIn){
 			for(Region pOut : regOut){
 				int xout=pOut.centrox;
@@ -215,6 +217,7 @@ public class LerCartao{
 				}
 			}
 		}
+		
 		if(pontosRef.size() < 3){
 			throw new Exception("Erro: 3 pontos nao encontrados (tamanho)");
 		}

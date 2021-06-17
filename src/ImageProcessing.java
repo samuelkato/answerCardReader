@@ -1,5 +1,6 @@
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -198,11 +199,19 @@ public class ImageProcessing {
 			width/=(float)height/max;
 			height=max;
 		}
+		//boolean[][] filtro = {{true,true,true},{true,true,true},{true,true,true}};
+		//file = passaBaixa(file,filtro);
+		/*
 		BufferedImage resizedImage = new BufferedImage(width, height, 5);
+		
 		Graphics2D g = resizedImage.createGraphics();
+		g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 		g.drawImage(file, 0, 0, width, height, null);
 		g.dispose();
-
+		*/
+		Image resultingImage = file.getScaledInstance(width, height, Image.SCALE_AREA_AVERAGING);
+		BufferedImage resizedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		resizedImage.getGraphics().drawImage(resultingImage, 0, 0, null);
 		return resizedImage;
 	}
 	
@@ -286,15 +295,13 @@ public class ImageProcessing {
 		return rgb2img(this.oRgb);
 	}
 	
-	public BufferedImage rgb2img(int[][][] oRgb){
+	public static BufferedImage rgb2img(int[][][] oRgb){
 		int height = oRgb.length;
 		int width = oRgb[0].length;
 		BufferedImage img = new BufferedImage(width,height,BufferedImage.TYPE_INT_RGB);
 		for (int x = 0; x < width; x++) {
 			for (int y = 0; y < height; y++) {
-				long color = (long)this.img.getRGB(x, y);
-				
-				color = (oRgb[y][x][0] << 16) | (oRgb[y][x][1] << 8) | (oRgb[y][x][2]);
+				long color = (oRgb[y][x][0] << 16) | (oRgb[y][x][1] << 8) | (oRgb[y][x][2]);
 				
 				img.setRGB(x, y, (int)color);
 			}
@@ -303,6 +310,29 @@ public class ImageProcessing {
 	}
 	
 	public void passaBaixa(boolean[][] filtro){
+		this.oRgb = passaBaixa(this.oRgb, filtro);
+	}
+	
+	public static BufferedImage passaBaixa(BufferedImage img, boolean[][] filtro) {
+		int width = img.getWidth();
+		int height = img.getHeight();
+		int[][][] oRgb = new int[height][width][3];
+		
+		for (int x = 0; x < width; x++) {
+			for (int y = 0; y < height; y++) {
+				Color c = new Color(img.getRGB(x, y));
+				oRgb[y][x][0] = c.getRed();
+				oRgb[y][x][1] = c.getGreen();
+				oRgb[y][x][2] = c.getBlue();
+			}
+		}
+		oRgb = passaBaixa(oRgb,filtro);
+		return rgb2img(oRgb);
+	}
+	
+	public static int[][][] passaBaixa(int[][][] oRgb, boolean[][] filtro){
+		int height = oRgb.length;
+		int width = oRgb[0].length;
 		int[][][] oRgbOut = new int[height][width][3];
 		int hf = filtro.length;
 		int wf = filtro[0].length;
@@ -319,7 +349,7 @@ public class ImageProcessing {
 						if(xf < 0 || xf >= width) continue;
 						if(filtro[yf - (y - cy)][xf - (x - cx)]){
 							for(int i = 0; i < 3; i++){
-								aCor[i] += this.oRgb[yf][xf][i];
+								aCor[i] += oRgb[yf][xf][i];
 							}
 							div++;
 						}
@@ -331,7 +361,7 @@ public class ImageProcessing {
 			}
 		}
 		
-		this.oRgb = oRgbOut;
+		return oRgbOut;
 	}
 	
 	// Correct, but creates a copy of the image which is inefficient
