@@ -13,7 +13,9 @@ import javax.imageio.ImageIO;
 
 public class ImageProcessing {
 	BufferedImage img=null;
+	BufferedImage imgOriginal=null;
 	String path;
+	String fileName;
 	boolean[][] m=null;
 	byte[] mByte;
 	boolean[][] mInv=null;
@@ -22,9 +24,10 @@ public class ImageProcessing {
 
 	public ImageProcessing(File fileEntry, boolean rodar) throws IOException {
 		this.path = fileEntry.getPath();
-		BufferedImage img = ImageIO.read(fileEntry);
-		img.getType();//soh pra levantar uma Exception e nao processa o arquivo
-		this.img = criarImagemRedimensionada(img, 1000);
+		this.fileName = this.path.replaceAll(".+(\\/|\\\\)","").replace("\"", "\\\"").replace("\\", "\\\\").replaceAll("\\..+$", "");
+		this.imgOriginal = ImageIO.read(fileEntry);
+		this.imgOriginal.getType();//soh pra levantar uma Exception e nao processa o arquivo
+		this.img = criarImagemRedimensionada(this.imgOriginal, 1000);
 		this.reloadImg();
 		if(rodar)createMatrix();
 	}	

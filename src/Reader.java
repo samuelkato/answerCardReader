@@ -10,6 +10,11 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeListener;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.beans.*;
 
 import javax.swing.BorderFactory;
@@ -42,7 +47,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 		javax.swing.SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
 				//Create and set up the window.
-				JFrame frame = new JFrame("Ler Folha Resposta v6.7 paralelo");
+				JFrame frame = new JFrame("Ler Folha Resposta v6.8");
 				frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		 
 				//Create and set up the content pane.
@@ -56,10 +61,44 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 			}
 		});
 	}
+	
+	static String addFromJar(String jarPath, String tmpName) {
+		tmpName = System.getProperty("java.io.tmpdir")+"/"+tmpName;
+		File fileOut = new File(tmpName);
+        
+        //System.out.println(win);
+		InputStream in = Reader.class.getClassLoader().getResourceAsStream(jarPath);
+        // always write to different location
+        byte[] buffer = new byte[8 * 1024];
+        int bytesRead;
+        try {
+        	OutputStream out = new FileOutputStream(fileOut);
+			while ((bytesRead = in.read(buffer)) != -1) {
+			    out.write(buffer, 0, bytesRead);
+			}
+			in.close();
+			out.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        //System.out.println(fileOut.toString());
+        return fileOut.toString();
+	}
+	
 	public Reader(){
 		super(new BorderLayout());
-		 
-		//Create the demo's UI.
+		boolean win = System.getProperty("os.name").startsWith("Windows");
+		if(win) {
+			System.load(Reader.addFromJar("windows/opencv_java3415.dll","opencv_java3415.dll"));
+		}else {
+			System.load(Reader.addFromJar("linux/libopencv_java3415.so","libopencv_java3415.so"));
+			//System.load(Reader.addFromJar("linux/libopencv_java451.so","libopencv_java451.so"));
+			//System.load("/usr/lib/jni/libopencv_java420.so");
+		}
+		//System.load("/home/samuelkato/eclipse-workspace/answerCardReader/lib/linux/libopencv_java3415.so");
+		//System.load("C:\\Users\\SAMUEL~1\\Desktop\\opencv\\build\\java\\x64\\opencv_java3415.dll");
+        //Create the demo's UI.
 		startButton = new JButton("Escolher Pasta");
 		startButton.setActionCommand("start");
 		startButton.addActionListener(this);

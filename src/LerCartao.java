@@ -1,14 +1,20 @@
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Vector;
+
+import javax.imageio.ImageIO;
 
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.DecodeHintType;
@@ -16,18 +22,65 @@ import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
 import com.google.zxing.common.HybridBinarizer;
 import com.google.zxing.qrcode.QRCodeReader;
 
+import org.opencv.core.Core;
+import org.opencv.core.CvType;
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfByte;
+import org.opencv.core.MatOfPoint;
+import org.opencv.core.MatOfPoint2f;
+import org.opencv.core.Point;
+import org.opencv.core.Rect;
+import org.opencv.core.RotatedRect;
+import org.opencv.core.Scalar;
+import org.opencv.core.Size;
+import org.opencv.imgcodecs.Imgcodecs;
+import org.opencv.imgproc.Imgproc;
+import org.opencv.imgproc.Moments;
 
 public class LerCartao{
 	ImageProcessing clImg;
+	private static Mat imgTemplate=null;
 	private Boolean debug_;
+	private Mat bw;
+	private int tipo=2;//1=>teste 2=>diss
+	private double prop;
 	String saida = "";
 	
 	/*public LerCartao(ImageProcessing clImg, ZipOutputStream zipSaida) {
 		return;
 	}*/
-	public LerCartao(ImageProcessing clImg, Pool pool, Boolean debug_) {
+	public LerCartao(ImageProcessing clImg, Pool pool, Boolean debug_){
 		this.debug_ = debug_;
 		this.clImg=clImg;
+		
+		//System.load(getClass().getResource("opencv-3415.jar").getPath());
+		try {
+			//System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+			
+		}catch (UnsatisfiedLinkError e) {
+		//System.load(getClass().getResource("opencv-3415.jar").getPath());
+			//opencv_java3415
+			//System.out.println(getClass().getResource("opencv-3415.jar").getPath());
+			//System.out.println(e);
+			//extrair do jar e colocar em uma pasta
+			// TODO: handle exception
+		}
+		//System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+		
+		BufferedImage file = clImg.imgOriginal;
+		this.prop = Math.max(file.getHeight(), file.getWidth())/1000.0;
+		String respPag = procurarDissertativa(file);
+		if(respPag!="") {
+			this.saida  = respPag;
+			return;
+		}
+		
+
+		
+		
+
+		
+		//
 		this.clImg.createMatrix();
 		//this.clImg.reloadImg2();
 		Hashtable<String,String> saidaHt = new Hashtable<String,String>();
@@ -114,7 +167,7 @@ public class LerCartao{
 		}catch(Exception e){
 			saidaHt.put("msg", "\""+e.getMessage()+"\"");
 		}
-		saidaHt.put("orig", "\""+clImg.path.replaceAll(".+\\/","").replace("\"", "\\\"").replace("\\", "\\\\")+"\"");
+		//saidaHt.put("orig", "\""+clImg.fileName+"\"");
 		
 		
 		Enumeration<String> enumKey = saidaHt.keys();
@@ -125,8 +178,320 @@ public class LerCartao{
 			saida += "\""+key+"\""+":"+val;
 		}
 	}
-
 	
+	private String procurarDissertativa(BufferedImage file) {
+		String qr="";
+		String pagina="";
+		
+		double prop = this.prop;
+		this.bw = new Mat();
+		
+		Mat mat;
+		try {
+			ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+			ImageIO.write(file, "bmp", byteArrayOutputStream);
+			byteArrayOutputStream.flush();
+			mat = Imgcodecs.imdecode(new MatOfByte(byteArrayOutputStream.toByteArray()), Imgcodecs.IMREAD_UNCHANGED);
+		}catch (IOException e) {
+			// TODO: handle exception
+			mat = null;
+			System.out.println(e.getMessage());
+			return "";
+		}
+		int w = mat.width();
+		int h = mat.height();
+		if(w > h) {
+			Core.rotate(mat, mat, Core.ROTATE_90_CLOCKWISE);
+			w = h;
+			h = mat.height();
+		}
+		Mat gray = new Mat();
+		if(mat.channels()==1) {
+			gray = mat;
+		}else {
+			Imgproc.cvtColor(mat, gray, Imgproc.COLOR_RGB2GRAY);
+		}
+		/*
+		Mat qrPoints = new Mat();
+		QRCodeDetector qrDetect = new QRCodeDetector();
+		System.out.println(qrDetect.detectAndDecodeCurved(gray, qrPoints));
+		for(int i = 0; i < qrPoints.cols(); i++) {
+			double x = qrPoints.get(0, i)[0];
+			double y = qrPoints.get(0, i)[1];
+			System.out.println(x+":"+y);
+		}
+		*/
+		
+		Imgproc.adaptiveThreshold(gray, this.bw, 255, Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_BINARY, 201, 20);
+		//Imgproc.adaptiveThreshold(gray, this.bw, 255, Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY, 11, 12);
+		//Imgcodecs.imwrite("C:\\Users\\Samuel Kato\\Desktop\\img diss\\gray.bmp", gray);
+		//Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new  Size(Math.round(3*prop), Math.round(3*prop)));
+		int sizeKernel = 3 + (int)Math.round(1.6*(prop - 1));
+		//System.out.println(sizeKernel+" "+this.prop);
+		Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new  Size(sizeKernel,sizeKernel));
+		//System.out.println(kernel.dump());
+		//Mat kernel = Mat.eye(3, 3, CvType.CV_8UC1);
+		//kernel.put(0 ,0, 1,1,1, 1, 1, 1, 1,1,1 );
+		Mat mDil = this.bw.clone();
+		Imgproc.dilate(mDil, mDil, kernel);
+		Imgproc.erode(mDil, mDil, kernel);
+		Imgproc.erode(mDil, mDil, kernel);
+		Imgproc.erode(mDil, mDil, kernel);
+		//Imgproc.erode(mDil, mDil, kernel);
+		Imgproc.dilate(mDil, mDil, kernel);
+		Imgproc.dilate(mDil, mDil, kernel);
+		Imgproc.dilate(mDil, mDil, kernel);
+		//Imgproc.erode(mDil, mDil, kernel);
+		//Imgcodecs.imwrite("/home/samuelkato/Desktop/img diss/dil.bmp", mDil);
+		List<MatOfPoint> cntsQr = new ArrayList<>();
+		Imgproc.findContours(mDil, cntsQr, new Mat(), Imgproc.RETR_TREE,Imgproc.CHAIN_APPROX_SIMPLE);
+		Mat matBranca = new Mat(mat.size(),CvType.CV_8U,new Scalar(255));
+		double qrx=0;
+		double qry=0;
+		double qrAngle=0;
+		int minAreaQr = (int)(4000*prop*prop);
+		for(MatOfPoint cnt : cntsQr) {
+			double area = Imgproc.contourArea(cnt,true);
+			RotatedRect rrect = Imgproc.minAreaRect(new MatOfPoint2f( cnt.toArray() ));
+			double ratio = rrect.size.width/rrect.size.height;
+			if(area>minAreaQr && Math.abs(ratio - 1) < 0.3) {
+				Moments moments = Imgproc.moments(cnt);
+				double x = moments.m10 / moments.m00;
+				double y = moments.m01 / moments.m00;
+				if((x < w/4 && y > h/4) || (x > w/4 && y < h/4)) {
+					qrAngle = rrect.angle % 90;
+					if(qrAngle > 45) qrAngle -= 90;
+					
+					//desenha qr numa folha para processamento futuro
+					List<MatOfPoint> cntsQrTmp = new ArrayList<>();
+					cntsQrTmp.add(cnt);
+					Imgproc.drawContours(matBranca, cntsQrTmp, -1, new Scalar(0), -1) ;
+					qrx = x;
+					qry = y;
+					qr = lerQr1(mat.submat(Imgproc.boundingRect(cnt)));
+					if(qr.length()>0) break;
+				}
+			}
+		}
+		if(qrx==0 || qry==0) {//sem regiao do qr,provavel erro de leitura
+			this.tipo = 1;
+			return "";
+		}else if(qrx < w/2 && qry > h/2) {//de ponta cabeça
+			Core.rotate(matBranca, matBranca, Core.ROTATE_180);
+			Core.rotate(mat, mat, Core.ROTATE_180);
+			Core.rotate(gray, gray, Core.ROTATE_180);
+			Core.rotate(this.bw, this.bw, Core.ROTATE_180);
+		}
+		this.tipo = 2;
+		
+
+		// Preparing the kernel matrix object
+		
+		//Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new  Size((2*2) + 1, (2*2)+1));
+		
+		
+		pagina = this.getNumeroPagina(matBranca);
+
+		Mat bwLinha = new Mat();
+		Mat kernel2 = Mat.eye(3, 3, CvType.CV_8UC1);
+		kernel2.put(0 ,0, 0,0,0, 1, 1, 1, 0,0,0 );
+		Imgproc.dilate(this.bw, bwLinha, kernel2);
+		Imgproc.erode(bwLinha, bwLinha, kernel2);
+		//Imgproc.erode(bwLinha, bwLinha, kernel);
+		//Imgproc.erode(bwLinha, bwLinha, kernel);
+		//Imgproc.erode(bwLinha, bwLinha, kernel);
+		//Imgproc.erode(bwLinha, bwLinha, kernel);
+		//Imgproc.erode(bwLinha, bwLinha, kernel);
+
+		//Imgcodecs.imwrite("/home/samuelkato/Desktop/img diss/bwLinha.bmp", bwLinha);
+		List<MatOfPoint> contours = new ArrayList<>();
+		Imgproc.findContours(bwLinha, contours, new Mat(), Imgproc.RETR_TREE,Imgproc.CHAIN_APPROX_SIMPLE);
+		
+		List<MatOfPoint> contoursLinhas = new ArrayList<>();
+		double lastAng = qrAngle;
+		double avgAng = qrAngle;
+
+		//int minAreaLin = (int)(1000*prop*prop);
+		//int maxAreaLin = (int)(4000*prop*prop);
+		int minWLin = (int)(560*prop);
+		int maxWHin = (int)(8*prop);
+		for(MatOfPoint cnt : contours) {
+			//double area = Imgproc.contourArea(cnt,true);
+			//Moments moments = Imgproc.moments(cnt);
+			//double cx = moments.m10 / moments.m00;
+			//double cy = moments.m01 / moments.m00;
+			//if(area<minAreaLin || area>maxAreaLin) continue;
+			RotatedRect rrect = Imgproc.minAreaRect(new MatOfPoint2f( cnt.toArray() ));
+			double angle = rrect.angle % 90;
+			if(angle > 45) angle -= 90;
+			if(angle > 10 || angle < -10) continue;
+			double rw = Math.max(rrect.size.width,rrect.size.height);
+			double rh = Math.min(rrect.size.width,rrect.size.height);
+			if(rw < minWLin || rh > maxWHin) continue;
+			if(Math.abs(lastAng - angle) > 1) continue;
+			contoursLinhas.add(cnt);
+			lastAng = angle;
+			avgAng += angle;
+			//System.out.println("angulo:"+(angle)+" w:"+rw+" h:"+rh+" center:"+cx+","+cy+" "+area);
+		}
+		
+
+
+		
+		
+
+		//Imgcodecs.imwrite("/home/samuelkato/Desktop/img diss/bw.bmp", this.bw);
+		//Imgcodecs.imwrite("/home/samuelkato/Desktop/img diss/template.bmp", imgTemplate);
+		//System.out.println(avgAng);
+		//rotacionar
+		//talvez precise rotacionar a imagem original sem redução de qualidade
+		avgAng /= contoursLinhas.size()+1;
+		
+		Imgproc.drawContours(matBranca, contoursLinhas, -1, new Scalar(0), -1) ;
+		Mat mapMatrix = Imgproc.getRotationMatrix2D(new Point(w / 2D, h / 2D), avgAng, 1.0);
+		Imgproc.warpAffine(matBranca, matBranca, mapMatrix, matBranca.size(), 0,Core.BORDER_CONSTANT,new Scalar(255));
+		
+		String ys = "";
+		contoursLinhas.clear();
+		Imgproc.findContours(matBranca, contoursLinhas, new Mat(), Imgproc.RETR_TREE,Imgproc.CHAIN_APPROX_SIMPLE);
+		for(MatOfPoint cnt : contoursLinhas) {
+			double area = Imgproc.contourArea(cnt,true);
+			if(area<=0) continue;
+			Rect rect = Imgproc.boundingRect(cnt);
+			if(ys.length()>0)ys+=",";
+			ys+=rect.y;
+		}
+		//Imgcodecs.imwrite("/home/samuelkato/Desktop/img diss/matBranca.bmp", matBranca);
+		//if(saida != "") saida += ",";
+		//saida += "\""+key+"\""+":"+val;
+		return "\"qr\":\""+qr+"\",\"pag\":\""+pagina+"\",\"div\":["+ys+"],\"ang\":"+avgAng;
+	}
+
+	private String getNumeroPagina(Mat matBranca) {
+		List<MatOfPoint> contours = new ArrayList<>();
+		Imgproc.findContours(this.bw, contours, new Mat(), Imgproc.RETR_TREE,Imgproc.CHAIN_APPROX_SIMPLE);
+		if(LerCartao.imgTemplate==null) {
+			//LerCartao.imgTemplate = Imgcodecs.imread("/home/samuelkato/template2.png",0);
+			/*try {
+				//LerCartao.imgTemplate = Imgcodecs.imread(new File(URLDecoder.decode(getClass().getResource("template3.png").getPath(),"utf-8")).getPath(),0);
+			} catch (UnsupportedEncodingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}*/
+			
+			LerCartao.imgTemplate = Imgcodecs.imread(Reader.addFromJar("template3.png","template3.png"),0);
+			//LerCartao.imgTemplate = Imgcodecs.imread("C:/Users/Samuel Kato/eclipse-workspace/answerCardReader/images/template3.png",0);
+			//System.out.println(getClass().getResource("template3.png").getPath());
+			//LerCartao.imgTemplate = Imgcodecs.imread("/home/samuelkato/template3.png",0);
+			
+			//LerCartao.imgTemplate = Imgcodecs.imread("/home/samuelkato/template-times.png",0);
+		}
+		int w = this.bw.width();
+		int h = this.bw.height();
+		/*Map<String, int[]> mTemplate = new HashMap<String,int[]>();
+		mTemplate.put("0", new int[]{60,43});//colocar min e max width height? area?
+		mTemplate.put("1", new int[]{160, 43});//area prop
+		mTemplate.put("2", new int[]{247, 43});
+		mTemplate.put("3", new int[]{342, 43});
+		mTemplate.put("4", new int[]{431, 43});
+		mTemplate.put("5", new int[]{526, 43});
+		mTemplate.put("6", new int[]{620, 43});
+		mTemplate.put("7", new int[]{714, 43});
+		mTemplate.put("8", new int[]{807, 43});
+		mTemplate.put("9", new int[]{900, 43});
+		mTemplate.put("/", new int[]{990, 43});
+		int heightTemplate = 54;
+		*/
+
+		Map<String, int[]> mTemplate = new HashMap<String,int[]>();
+		mTemplate.put("0", new int[]{64,2});//colocar min e max width height? area?
+		mTemplate.put("1", new int[]{159, 2});//area prop
+		mTemplate.put("2", new int[]{249, 2});
+		mTemplate.put("3", new int[]{342, 2});
+		mTemplate.put("4", new int[]{433, 2});
+		mTemplate.put("5", new int[]{528, 2});
+		mTemplate.put("6", new int[]{619, 2});
+		mTemplate.put("7", new int[]{714, 2});
+		mTemplate.put("8", new int[]{805, 2});
+		mTemplate.put("9", new int[]{899, 2});
+		mTemplate.put("/", new int[]{988, 2});
+		int heightTemplate = 46;
+		List<MatOfPoint> contoursLetras = new ArrayList<>();
+		Map<MatOfPoint, String> mapLetras = new HashMap<>();
+		int iTmp = 0;
+
+		double minArea = 15*this.prop*this.prop;
+		double maxArea = 300*this.prop*this.prop;
+		int minWidth = (int)Math.round(5 * this.prop);
+		int maxWidth = (int)Math.round(20 * this.prop);
+		int minHeight = (int)Math.round(10 * this.prop);
+		int maxHeight = (int)Math.round(40 * this.prop);
+		
+		loop1:for(MatOfPoint cnt : contours) {
+			Rect rect = Imgproc.boundingRect(cnt);
+			if(rect.x > w/4 || rect.y <  h - h/6) continue;
+			double area = Imgproc.contourArea(cnt,true);
+			if(area < minArea || area > maxArea) continue;//only black cnt
+			if(rect.width > maxWidth || rect.width < minWidth || rect.height > maxHeight || rect.height < minHeight) continue;
+			/*Imgproc.rectangle (
+				dst2,                    //Matrix obj of the image
+		         new Point(rect.x, rect.y),        //p1
+		         new Point(rect.x+rect.width, rect.y+rect.height),       //p2
+		         new Scalar(128),     //Scalar object for color
+		         1                          //Thickness of the line
+		      );*/
+			//MatOfPoint approxContour = new MatOfPoint();
+			Mat matCnt= this.bw.submat(rect);
+			int wTmp = (int)(matCnt.cols() * (double)heightTemplate / matCnt.rows());
+			int hTmp = heightTemplate;
+			Imgproc.resize( matCnt, matCnt, new Size(wTmp,hTmp) );
+			if(wTmp > heightTemplate) continue;
+			Mat outputImage=new Mat();
+			Imgproc.matchTemplate(LerCartao.imgTemplate, matCnt, outputImage, Imgproc.TM_CCOEFF);
+			Point matchLoc = Core.minMaxLoc(outputImage).maxLoc;
+			//String key = "2";
+			for(String key : mTemplate.keySet()) {//dava pra fazer busca melhor com round de uma divisao
+				double difY = mTemplate.get(key)[1] - matchLoc.y;
+				if(Math.abs(mTemplate.get(key)[0] - matchLoc.x) <= 15 && difY <= 15 && difY >= -5) {
+					//TODO verificar differença b e p entre posicao encontrada 
+					//System.out.println(key+" "+iTmp+" area:"+area+" w:"+rect.width+" h:"+rect.height+" "+"pos:"+rect.x+","+rect.y+" ");
+					String keyPath = key == "/" ? "-" : key;
+					Imgcodecs.imwrite("/home/samuelkato/Desktop/img diss/eita-"+(iTmp++)+"-"+keyPath+".bmp", matCnt);
+					Mat imgTemplate = LerCartao.imgTemplate.clone();
+					Imgproc.rectangle(imgTemplate, matchLoc, new Point(matchLoc.x + matCnt.cols(),matchLoc.y + matCnt.rows()), new Scalar(128));
+					Imgcodecs.imwrite("/home/samuelkato/Desktop/img diss/template-"+(iTmp++)+"-"+keyPath+".bmp", imgTemplate);
+					contoursLetras.add(cnt);
+					mapLetras.put(cnt,key);
+					//break;
+					continue loop1;
+				}
+			}
+			//Imgcodecs.imwrite("/home/samuelkato/Desktop/img diss/z-"+(iTmp++)+".bmp", matCnt);
+		}
+		//Imgproc.drawContours(matBranca, contoursLetras, -1, new Scalar(0), -1) ;
+		
+		
+		List<Linha> linhas = Linha.gerarLinhas(contoursLetras);//pontos colineares
+		for(Linha linha : linhas) {
+			String strLinha = linha.getTexto(mapLetras);
+			//System.out.println(strLinha);
+			if(strLinha.matches("\\d+\\/\\d+")) {
+				//verificar se letras sao equidistantes
+				//verificar se estão no canto inferior da pagina
+				//verificar angulo
+				List<MatOfPoint> contoursTmp = new ArrayList<>();
+				contoursTmp.add(linha.getContourBarra(mapLetras));
+				Imgproc.drawContours(matBranca, contoursTmp, -1, new Scalar(0), -1) ;
+				return strLinha;
+			}
+			//System.out.println("\n"+linha.pontos.size());
+			/*System.out.println("\n"+linha.rectMin.x+":"+linha.rectMin.y+" "+linha.rectMax.x+":"+linha.rectMax.y);
+			Point pt1 = new Point(linha.rectMin.x, linha.rectMin.y);
+			Point pt2 = new Point(linha.rectMax.x, linha.rectMax.y);
+			Imgproc.line(gray, pt1, pt2, new Scalar(128), 1);*/
+		}
+		return "";
+	}
 	
 	
 
@@ -451,7 +816,7 @@ public class LerCartao{
 	 * @throws IOException 
 	 */
 	private String lerQr(ImageProcessing clImg, List<Region> pontosRef){
-		String result=null;
+		
 		
 		//long startTime = System.nanoTime();
 		int ang = (int)(Math.atan2(pontosRef.get(2).centroy - pontosRef.get(1).centroy, pontosRef.get(2).centrox - pontosRef.get(1).centrox)*180/Math.PI);
@@ -464,24 +829,7 @@ public class LerCartao{
 		
 		BufferedImage qrImage = file.getSubimage((int)((pontosRef.get(1).centrox+(300*propx))*prop), (int)(Math.max(0,(posY-170)*prop)), (int)(180*prop), (int)(180*prop));
 		
-		String[] mInstr = {"","crop","tamanho100","tamanho200","pb","rotateang","rotate45","passabaixa"};
-		
-		BufferedImage qrImg1,qrImg2,qrImg3;
-		
-		for(int i = 0; i < mInstr.length; i++){
-			qrImg1 = qrImage.getSubimage(0, 0, qrImage.getWidth(), qrImage.getHeight());
-			qrImg1 = mudaImagem(qrImg1, mInstr[i], ang);
-			for(int j = 0; j < mInstr.length; j++){
-				qrImg2 = mudaImagem(qrImg1,mInstr[j],ang);
-				for(int k = 0; k < mInstr.length; k++){
-					qrImg3 = mudaImagem(qrImg2, mInstr[k],ang);
-					result = lerQr2(qrImg3,mInstr[i]+"."+mInstr[j]+"."+mInstr[k]);
-					if(result!=null)return result;
-				}
-			}
-		}
-		
-		return "";
+		return lerQr1(qrImage, ang);
 	}
 
 	private BufferedImage mudaImagem(BufferedImage qrImg, String instr, int ang){
@@ -514,6 +862,41 @@ public class LerCartao{
 			qrImg=qrImg.getSubimage(10, 10, qrImg.getWidth() - 20, qrImg.getHeight() - 20);
 		}
 		return qrImg;
+	}
+	
+	private String lerQr1(Mat mat){
+		MatOfByte mob=new MatOfByte();
+		Imgcodecs.imencode(".jpg", mat, mob);
+		try {
+			BufferedImage qrImage = ImageIO.read(new ByteArrayInputStream(mob.toArray()));
+			return lerQr1(qrImage);
+		} catch (IOException e) {
+		}
+		return "";		
+	}
+	
+	private String lerQr1(BufferedImage qrImage) {
+		return lerQr1(qrImage,0);
+	}
+	
+	private String lerQr1(BufferedImage qrImage, int ang) {
+		String[] mInstr = {"","crop","tamanho100","tamanho200","pb","rotateang","rotate45","passabaixa"};
+		String result=null;
+		BufferedImage qrImg1,qrImg2,qrImg3;
+		
+		for(int i = 0; i < mInstr.length; i++){
+			qrImg1 = qrImage.getSubimage(0, 0, qrImage.getWidth(), qrImage.getHeight());
+			qrImg1 = mudaImagem(qrImg1, mInstr[i], ang);
+			for(int j = 0; j < mInstr.length; j++){
+				qrImg2 = mudaImagem(qrImg1,mInstr[j],ang);
+				for(int k = 0; k < mInstr.length; k++){
+					qrImg3 = mudaImagem(qrImg2, mInstr[k],ang);
+					result = lerQr2(qrImg3,mInstr[i]+"."+mInstr[j]+"."+mInstr[k]);
+					if(result!=null)return result;
+				}
+			}
+		}
+		return "";
 	}
 	
 	private String lerQr2(BufferedImage qrImg, String tipo){
@@ -641,6 +1024,10 @@ public class LerCartao{
 	
 	public String getSaida(){
 		return saida;
+	}
+	
+	public int getTipo() {
+		return this.tipo;
 	}
 
 

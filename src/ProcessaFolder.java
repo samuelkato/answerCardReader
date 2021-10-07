@@ -69,8 +69,10 @@ class ProcessaFolder extends SwingWorker<Void, Void> {
 		for (Consumidor c : aC) {
 		    try {
 				c.join();
-				if(conteudo.length()>0)conteudo+=",\n";
-				conteudo+=c.saida;
+				if(c.saida.length()>0) {
+					if(conteudo.length()>0)conteudo+=",\n";
+					conteudo+=c.saida;
+				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
