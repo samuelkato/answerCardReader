@@ -573,7 +573,7 @@ class ConfigImageProcessing{
 			return false;
 		}else if( b > g+10 && b > r+10 ){
 			return true;
-		}else if( r > g+50 && r > b+50 ){
+		}else if( r > g+30 && r > b+30 ){
 			return false;
 		}else if(r < 100 && g < 100 && b < 100){
 			return true;

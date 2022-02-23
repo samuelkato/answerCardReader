@@ -71,25 +71,32 @@ public class Linha {
 	
 	public double[] calcularAngulo(Rect rectMin, Rect rectMax) {
 		double m,angulo,c;
+		if(rectMin.x > rectMax.x) {
+			Rect rAux = rectMax;
+			rectMax = rectMin;
+			rectMin = rAux;
+		}
 		int cX0 = rectMin.x;
-		int cY0 = rectMin.y;
+		int cY0 = rectMin.y + rectMin.height;
 		int cX = rectMax.x;
-		int cY = rectMax.y;
+		int cY = rectMax.y + rectMax.height;
 		if(cX==cX0) m = 99999;
 		else m = (double)(cY-cY0) / (double)(cX-cX0);
-		angulo = Math.atan(m) * 180 / Math.PI;
+		angulo = Math.atan2(cY-cY0, cX-cX0) * 180 / Math.PI;
+		//angulo = Math.atan(m) * 180 / Math.PI;
 		c = cY0 - m * cX0;
 		return new double[]{m,angulo,c};
 	}
 	
 	public boolean inLine(Rect rect) {
 		double[] aAng = this.calcularAngulo(this.rectMin, rect);
-		if(Math.abs(aAng[1] - this.angulo) < 3 && Math.abs(aAng[2] - this.c) < 10) {
+		//System.out.println(aAng[1] - this.angulo);
+		if(Math.abs(aAng[1] - this.angulo) < 5 && Math.abs(aAng[2] - this.c) < 10) {
 			return true;
 		}
-
+		//System.out.println(aAng[2] - this.c);
 		aAng = this.calcularAngulo(this.rectMax, rect);
-		if(Math.abs(aAng[1] - this.angulo) < 3 && Math.abs(aAng[2] - this.c) < 10) {
+		if(Math.abs(aAng[1] - this.angulo) < 5 && Math.abs(aAng[2] - this.c) < 10) {
 			return true;
 		}
 		return false;

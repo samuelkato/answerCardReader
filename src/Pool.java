@@ -20,7 +20,7 @@ public class Pool {
 	}
 	public synchronized ImageProcessing get() {
 		while (contents.size() == 0) {
-			if(!aindaTem())return null;
+			if(!aindaTem()) return null;
 			try {
 				wait();
 			}
@@ -68,7 +68,7 @@ public class Pool {
 	}
 	public void retiraTotal(int n) {
 		total -= n;
-		processaFolder.mudarProgresso((int)Math.floor(((float)++jaFoi/total)*100));
+		processaFolder.mudarProgresso((int)Math.floor(((float)jaFoi/total)*100));
 	}
 	public void addMsg(String saidaAt) {
 		processaFolder.reader.taskOutput.append(saidaAt+"\n");

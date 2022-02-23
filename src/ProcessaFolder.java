@@ -16,7 +16,7 @@ class ProcessaFolder extends SwingWorker<Void, Void> {
 	private File folder;
 	private Boolean debug_;
 	private ZipOutputStream zipSaida;
-	public int nConsumidores = 2;
+	public int nConsumidores = 1;
 	public Reader reader;
 	/**
 	 * contrutora da classe

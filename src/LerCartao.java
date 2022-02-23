@@ -39,11 +39,13 @@ import org.opencv.imgproc.Moments;
 
 public class LerCartao{
 	ImageProcessing clImg;
-	private static Mat imgTemplate=null;
+	//private static Mat imgTemplate=null;
 	private Boolean debug_;
 	private Mat bw;
 	private int tipo=2;//1=>teste 2=>diss
 	private double prop;
+	private static Mat[] matLetras=null;
+	private static String[] aLetras = new String[]{"0","1","2","3","4","5","6","7","8","9","/"};
 	String saida = "";
 	
 	/*public LerCartao(ImageProcessing clImg, ZipOutputStream zipSaida) {
@@ -53,23 +55,9 @@ public class LerCartao{
 		this.debug_ = debug_;
 		this.clImg=clImg;
 		
-		//System.load(getClass().getResource("opencv-3415.jar").getPath());
-		try {
-			//System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-			
-		}catch (UnsatisfiedLinkError e) {
-		//System.load(getClass().getResource("opencv-3415.jar").getPath());
-			//opencv_java3415
-			//System.out.println(getClass().getResource("opencv-3415.jar").getPath());
-			//System.out.println(e);
-			//extrair do jar e colocar em uma pasta
-			// TODO: handle exception
-		}
-		//System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-		
 		BufferedImage file = clImg.imgOriginal;
 		this.prop = Math.max(file.getHeight(), file.getWidth())/1000.0;
-		String respPag = procurarDissertativa(file);
+		String respPag = this.procurarDissertativa(file);
 		if(respPag!="") {
 			this.saida  = respPag;
 			return;
@@ -202,6 +190,7 @@ public class LerCartao{
 		int h = mat.height();
 		if(w > h) {
 			Core.rotate(mat, mat, Core.ROTATE_90_CLOCKWISE);
+			this.clImg.imgOriginal = ImageProcessing.rotate(this.clImg.imgOriginal, 90);
 			w = h;
 			h = mat.height();
 		}
@@ -258,7 +247,7 @@ public class LerCartao{
 				Moments moments = Imgproc.moments(cnt);
 				double x = moments.m10 / moments.m00;
 				double y = moments.m01 / moments.m00;
-				if((x < w/4 && y > h/4) || (x > w/4 && y < h/4)) {
+				if((x < w/4 && y > h*3/4) || (x > w*3/4 && y < h/4)) {
 					qrAngle = rrect.angle % 90;
 					if(qrAngle > 45) qrAngle -= 90;
 					
@@ -281,6 +270,7 @@ public class LerCartao{
 			Core.rotate(mat, mat, Core.ROTATE_180);
 			Core.rotate(gray, gray, Core.ROTATE_180);
 			Core.rotate(this.bw, this.bw, Core.ROTATE_180);
+			this.clImg.imgOriginal = ImageProcessing.rotate(this.clImg.imgOriginal, 180);
 		}
 		this.tipo = 2;
 		
@@ -370,7 +360,8 @@ public class LerCartao{
 	private String getNumeroPagina(Mat matBranca) {
 		List<MatOfPoint> contours = new ArrayList<>();
 		Imgproc.findContours(this.bw, contours, new Mat(), Imgproc.RETR_TREE,Imgproc.CHAIN_APPROX_SIMPLE);
-		if(LerCartao.imgTemplate==null) {
+		if(LerCartao.matLetras==null) {
+			LerCartao.matLetras = new Mat[11];
 			//LerCartao.imgTemplate = Imgcodecs.imread("/home/samuelkato/template2.png",0);
 			/*try {
 				//LerCartao.imgTemplate = Imgcodecs.imread(new File(URLDecoder.decode(getClass().getResource("template3.png").getPath(),"utf-8")).getPath(),0);
@@ -379,7 +370,31 @@ public class LerCartao{
 				e.printStackTrace();
 			}*/
 			
-			LerCartao.imgTemplate = Imgcodecs.imread(Reader.addFromJar("template3.png","template3.png"),0);
+			//LerCartao.imgTemplate = Imgcodecs.imread(Reader.addFromJar("template3.png","template3.png"),0);
+			Mat imgTemplate = Imgcodecs.imread(Reader.addFromJar("times.png","times.png"),0);
+			//Mat imgTemplate = Imgcodecs.imread(Reader.addFromJar("template3.png","template3.png"),0);
+			Imgproc.adaptiveThreshold(imgTemplate, imgTemplate, 255, Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_BINARY, 201, 20);
+			List<MatOfPoint> contoursTmp = new ArrayList<>();
+			Imgproc.findContours(imgTemplate, contoursTmp, new Mat(), Imgproc.RETR_TREE,Imgproc.CHAIN_APPROX_SIMPLE);
+			for(MatOfPoint cnt : contoursTmp) {
+				double area = Imgproc.contourArea(cnt,true);
+				if(area<0) continue;//contoursTmp.remove(cnt);
+				Rect rect = Imgproc.boundingRect(cnt);
+				int ind = (int) Math.round((double)(rect.x - 94) / 99.8);//times
+				//int ind = (int) Math.round((double)(rect.x - 63) / 92.4);//template3
+				if(ind>=0 && ind<11) {
+					LerCartao.matLetras[ind]=imgTemplate.submat(rect);
+				}
+				//Core.bitwise_xor(src, threshold, dst);
+				//Core.countNonZero(matBranca)
+				//Point p1 = new Point(rect.x,rect.y);
+				//Point p2 = new Point(rect.x+rect.width,rect.y+rect.height);
+				//Imgproc.rectangle(LerCartao.imgTemplate, p1, p2, new Scalar(128));
+			}
+			//System.out.println(matLetras.length);
+			//Imgproc.drawContours(LerCartao.imgTemplate, contoursTmp, -1, new Scalar(0), 1) ;
+			//Imgcodecs.imwrite("/home/samuelkato/Desktop/img diss/template.bmp", matLetras[1]);
+			
 			//LerCartao.imgTemplate = Imgcodecs.imread("C:/Users/Samuel Kato/eclipse-workspace/answerCardReader/images/template3.png",0);
 			//System.out.println(getClass().getResource("template3.png").getPath());
 			//LerCartao.imgTemplate = Imgcodecs.imread("/home/samuelkato/template3.png",0);
@@ -395,14 +410,16 @@ public class LerCartao{
 		mTemplate.put("3", new int[]{342, 43});
 		mTemplate.put("4", new int[]{431, 43});
 		mTemplate.put("5", new int[]{526, 43});
-		mTemplate.put("6", new int[]{620, 43});
+		mTemplate.put("6", new int[]{620, 43});'
 		mTemplate.put("7", new int[]{714, 43});
 		mTemplate.put("8", new int[]{807, 43});
 		mTemplate.put("9", new int[]{900, 43});
 		mTemplate.put("/", new int[]{990, 43});
 		int heightTemplate = 54;
 		*/
-
+		
+		/*
+		//template3
 		Map<String, int[]> mTemplate = new HashMap<String,int[]>();
 		mTemplate.put("0", new int[]{64,2});//colocar min e max width height? area?
 		mTemplate.put("1", new int[]{159, 2});//area prop
@@ -415,10 +432,27 @@ public class LerCartao{
 		mTemplate.put("8", new int[]{805, 2});
 		mTemplate.put("9", new int[]{899, 2});
 		mTemplate.put("/", new int[]{988, 2});
-		int heightTemplate = 46;
+		*/
+		
+		/*
+		//times
+		Map<String, int[]> mTemplate = new HashMap<String,int[]>();
+		mTemplate.put("0", new int[]{94,  8});//colocar min e max width height? area?
+		mTemplate.put("1", new int[]{200, 8});//area prop
+		mTemplate.put("2", new int[]{293, 8});
+		mTemplate.put("3", new int[]{394, 8});
+		mTemplate.put("4", new int[]{492, 8});
+		mTemplate.put("5", new int[]{595, 8});
+		mTemplate.put("6", new int[]{694, 8});
+		mTemplate.put("7", new int[]{794, 8});
+		mTemplate.put("8", new int[]{896, 8});
+		mTemplate.put("9", new int[]{994, 8});
+		mTemplate.put("/", new int[]{1092, 8});
+		*/
+//		int heightTemplate = 46;
 		List<MatOfPoint> contoursLetras = new ArrayList<>();
 		Map<MatOfPoint, String> mapLetras = new HashMap<>();
-		int iTmp = 0;
+//		int iTmp = 0;
 
 		double minArea = 15*this.prop*this.prop;
 		double maxArea = 300*this.prop*this.prop;
@@ -427,7 +461,7 @@ public class LerCartao{
 		int minHeight = (int)Math.round(10 * this.prop);
 		int maxHeight = (int)Math.round(40 * this.prop);
 		
-		loop1:for(MatOfPoint cnt : contours) {
+		for(MatOfPoint cnt : contours) {
 			Rect rect = Imgproc.boundingRect(cnt);
 			if(rect.x > w/4 || rect.y <  h - h/6) continue;
 			double area = Imgproc.contourArea(cnt,true);
@@ -442,47 +476,80 @@ public class LerCartao{
 		      );*/
 			//MatOfPoint approxContour = new MatOfPoint();
 			Mat matCnt= this.bw.submat(rect);
-			int wTmp = (int)(matCnt.cols() * (double)heightTemplate / matCnt.rows());
-			int hTmp = heightTemplate;
-			Imgproc.resize( matCnt, matCnt, new Size(wTmp,hTmp) );
-			if(wTmp > heightTemplate) continue;
-			Mat outputImage=new Mat();
-			Imgproc.matchTemplate(LerCartao.imgTemplate, matCnt, outputImage, Imgproc.TM_CCOEFF);
-			Point matchLoc = Core.minMaxLoc(outputImage).maxLoc;
+			//int wTmp = (int)(matCnt.cols() * (double)heightTemplate / matCnt.rows());
+			//int hTmp = heightTemplate;
+			//Imgproc.resize( matCnt, matCnt, new Size(wTmp,hTmp) );
+			//if(wTmp > heightTemplate) continue;
+			//Mat outputImage=new Mat();
+			//Imgproc.matchTemplate(LerCartao.imgTemplate, matCnt, outputImage, Imgproc.TM_CCOEFF);
+			//Point matchLoc = Core.minMaxLoc(outputImage).maxLoc;
 			//String key = "2";
-			for(String key : mTemplate.keySet()) {//dava pra fazer busca melhor com round de uma divisao
+			Mat mRez = new Mat();
+			int iEsco = 12;
+			double maxVal = 0;
+			for(int i=0;i<LerCartao.matLetras.length;i++) {
+				Mat mLetraAt = LerCartao.matLetras[i];
+				Imgproc.resize( matCnt, mRez, new Size(mLetraAt.cols(),mLetraAt.rows()) );
+				Imgproc.adaptiveThreshold(mRez, mRez, 255, Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_BINARY, 201, 20);
+				Mat dst = new Mat(mLetraAt.rows(), mLetraAt.cols(), mLetraAt.type());
+				Core.bitwise_xor(mRez, mLetraAt, dst);
+				double perc = (1 - (double)Core.countNonZero(dst)/(mLetraAt.rows() * mLetraAt.cols())) * 100;
+				if(perc > maxVal) {
+					maxVal = perc;
+					iEsco = i;
+				}
+				/*Imgcodecs.imwrite("/home/samuelkato/Desktop/img diss/template-"+(iTmp++)+".bmp", mRez);
+				Imgcodecs.imwrite("/home/samuelkato/Desktop/img diss/template-"+(iTmp++)+".bmp", mLetraAt);
+				System.out.println(iTmp+":"+perc);
+				Imgcodecs.imwrite("/home/samuelkato/Desktop/img diss/template-"+(iTmp++)+".bmp", dst);*/
+			}
+			if(maxVal > 80) {
+				contoursLetras.add(cnt);
+				mapLetras.put(cnt,aLetras[iEsco]);
+				
+				/*Point p1 = new Point(rect.x,rect.y);
+				Point p2 = new Point(rect.x+rect.width,rect.y+rect.height);
+				Imgproc.rectangle(matBranca, p1, p2, new Scalar(0));*/
+			}
+			//System.out.println(iEsco+":"+maxVal);
+			/*for(String key : mTemplate.keySet()) {//dava pra fazer busca melhor com round de uma divisao
 				double difY = mTemplate.get(key)[1] - matchLoc.y;
 				if(Math.abs(mTemplate.get(key)[0] - matchLoc.x) <= 15 && difY <= 15 && difY >= -5) {
 					//TODO verificar differença b e p entre posicao encontrada 
 					//System.out.println(key+" "+iTmp+" area:"+area+" w:"+rect.width+" h:"+rect.height+" "+"pos:"+rect.x+","+rect.y+" ");
-					String keyPath = key == "/" ? "-" : key;
-					Imgcodecs.imwrite("/home/samuelkato/Desktop/img diss/eita-"+(iTmp++)+"-"+keyPath+".bmp", matCnt);
-					Mat imgTemplate = LerCartao.imgTemplate.clone();
-					Imgproc.rectangle(imgTemplate, matchLoc, new Point(matchLoc.x + matCnt.cols(),matchLoc.y + matCnt.rows()), new Scalar(128));
-					Imgcodecs.imwrite("/home/samuelkato/Desktop/img diss/template-"+(iTmp++)+"-"+keyPath+".bmp", imgTemplate);
+					//String keyPath = key == "/" ? "-" : key;
+					//Imgcodecs.imwrite("/home/samuelkato/Desktop/img diss/eita-"+(iTmp++)+"-"+keyPath+".bmp", matCnt);
+					//Mat imgTemplate = LerCartao.imgTemplate.clone();
+					//Imgproc.rectangle(imgTemplate, matchLoc, new Point(matchLoc.x + matCnt.cols(),matchLoc.y + matCnt.rows()), new Scalar(128));
+					//Imgcodecs.imwrite("/home/samuelkato/Desktop/img diss/template-"+(iTmp++)+"-"+keyPath+".bmp", imgTemplate);
 					contoursLetras.add(cnt);
 					mapLetras.put(cnt,key);
 					//break;
 					continue loop1;
 				}
-			}
+			}*/
 			//Imgcodecs.imwrite("/home/samuelkato/Desktop/img diss/z-"+(iTmp++)+".bmp", matCnt);
 		}
 		//Imgproc.drawContours(matBranca, contoursLetras, -1, new Scalar(0), -1) ;
-		
-		
+		//Imgcodecs.imwrite("/home/samuelkato/Desktop/img diss/mathBranca.bmp", matBranca);
+		//List<String> aCand = new ArrayList<String>();
+		String lastStrLinha=""; 
+		Linha lastLinha=null;
 		List<Linha> linhas = Linha.gerarLinhas(contoursLetras);//pontos colineares
 		for(Linha linha : linhas) {
 			String strLinha = linha.getTexto(mapLetras);
 			//System.out.println(strLinha);
-			if(strLinha.matches("\\d+\\/\\d+")) {
+			String[] aLinha = strLinha.split("/");
+			if(strLinha.matches("\\d+\\/\\d+") && Integer.parseInt(aLinha[0]) <= Integer.parseInt(aLinha[1])) {
 				//verificar se letras sao equidistantes
 				//verificar se estão no canto inferior da pagina
 				//verificar angulo
-				List<MatOfPoint> contoursTmp = new ArrayList<>();
-				contoursTmp.add(linha.getContourBarra(mapLetras));
-				Imgproc.drawContours(matBranca, contoursTmp, -1, new Scalar(0), -1) ;
-				return strLinha;
+				
+				if(strLinha.length() > lastStrLinha.length()) {
+					lastStrLinha = strLinha;
+					lastLinha = linha;
+				}
+				//return strLinha;
 			}
 			//System.out.println("\n"+linha.pontos.size());
 			/*System.out.println("\n"+linha.rectMin.x+":"+linha.rectMin.y+" "+linha.rectMax.x+":"+linha.rectMax.y);
@@ -490,7 +557,12 @@ public class LerCartao{
 			Point pt2 = new Point(linha.rectMax.x, linha.rectMax.y);
 			Imgproc.line(gray, pt1, pt2, new Scalar(128), 1);*/
 		}
-		return "";
+		if(lastLinha!=null) {
+			List<MatOfPoint> contoursTmp = new ArrayList<>();
+			contoursTmp.add(lastLinha.getContourBarra(mapLetras));
+			Imgproc.drawContours(matBranca, contoursTmp, -1, new Scalar(0), -1) ;
+		}
+		return lastStrLinha;
 	}
 	
 	
@@ -557,17 +629,34 @@ public class LerCartao{
 	private List<Region> procurar3pontosTamanho(ImageProcessing clImg, int[][] bw) throws Exception{
 		ConfigImageProcessing config=new ConfigImageProcessing();
 		
+		List<Region> regions = clImg.regionProps(bw);
+		List<Region> regions2 = new ArrayList<Region>(regions);
+		/*for(Region r : regions) {
+			if(r.area>=200 && r.area<=600) {
+				System.out.println(r.area+" "+r.getDensity()+" "+r.centrox+":"+r.centroy);
+			}
+			if(r.centrox > 200 && r.centrox < 210 && r.centroy > 605 && r.centroy < 620) {
+
+				System.out.println("aqui => "+r.area+" "+r.getDensity()+" "+r.centrox+":"+r.centroy);
+			}
+		}*/
+		
 		config.minArea=200;
 		config.maxArea=600;
 		config.minDensity=0.6;
 		config.maxDensity=1;
-		List<Region> regIn = clImg.filterRegions(clImg.regionProps(bw),config);
+		List<Region> regIn = clImg.filterRegions(regions,config);
 		
+		/*for(Region r : regions2) {
+			if(r.area>=400) {
+				System.out.println(r.area+" "+r.getDensity()+" "+r.centrox+":"+r.centroy);
+			}
+		}*/
 		config.minArea=400;
 		config.maxArea=1000;
 		config.minDensity=0.1;
-		config.maxDensity=0.5;
-		List<Region> regOut = clImg.filterRegions(clImg.regionProps(bw),config);
+		config.maxDensity=0.6;
+		List<Region> regOut = clImg.filterRegions(regions2,config);
 		
 		List<Region> pontosRef=new Vector<Region>();
 		int folga = 5;

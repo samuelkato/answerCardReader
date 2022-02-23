@@ -93,7 +93,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 			System.load(Reader.addFromJar("windows/opencv_java3415.dll","opencv_java3415.dll"));
 		}else {
 			System.load(Reader.addFromJar("linux/libopencv_java3415.so","libopencv_java3415.so"));
-			//System.load(Reader.addFromJar("linux/libopencv_java451.so","libopencv_java451.so"));
+			//System.load(Reader.addFromJar("linux/libopencv_java453.so","libopencv_java453.so"));
 			//System.load("/usr/lib/jni/libopencv_java420.so");
 		}
 		//System.load("/home/samuelkato/eclipse-workspace/answerCardReader/lib/linux/libopencv_java3415.so");

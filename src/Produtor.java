@@ -12,7 +12,9 @@ public class Produtor extends Thread {
 	public void run() {
 		pool.setTotal(a.length);
 		for (File fileEntry : a) {
-			if (!fileEntry.isDirectory()) {
+			if (fileEntry.isDirectory()) {
+				pool.retiraTotal(1);
+			}else {
 				try{
 					pool.add(new ImageProcessing(fileEntry, false));
 				}catch(Exception e){
