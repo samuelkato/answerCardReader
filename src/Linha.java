@@ -90,13 +90,11 @@ public class Linha {
 	
 	public boolean inLine(Rect rect) {
 		double[] aAng = this.calcularAngulo(this.rectMin, rect);
-		//System.out.println(aAng[1] - this.angulo);
-		if(Math.abs(aAng[1] - this.angulo) < 5 && Math.abs(aAng[2] - this.c) < 10) {
+		if(Math.abs(aAng[1] - this.angulo) < 5 && Math.abs(aAng[2] - this.c) < 20) {
 			return true;
 		}
-		//System.out.println(aAng[2] - this.c);
 		aAng = this.calcularAngulo(this.rectMax, rect);
-		if(Math.abs(aAng[1] - this.angulo) < 5 && Math.abs(aAng[2] - this.c) < 10) {
+		if(Math.abs(aAng[1] - this.angulo) < 5 && Math.abs(aAng[2] - this.c) < 20) {
 			return true;
 		}
 		return false;

@@ -362,15 +362,6 @@ public class LerCartao{
 		Imgproc.findContours(this.bw, contours, new Mat(), Imgproc.RETR_TREE,Imgproc.CHAIN_APPROX_SIMPLE);
 		if(LerCartao.matLetras==null) {
 			LerCartao.matLetras = new Mat[11];
-			//LerCartao.imgTemplate = Imgcodecs.imread("/home/samuelkato/template2.png",0);
-			/*try {
-				//LerCartao.imgTemplate = Imgcodecs.imread(new File(URLDecoder.decode(getClass().getResource("template3.png").getPath(),"utf-8")).getPath(),0);
-			} catch (UnsupportedEncodingException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}*/
-			
-			//LerCartao.imgTemplate = Imgcodecs.imread(Reader.addFromJar("template3.png","template3.png"),0);
 			Mat imgTemplate = Imgcodecs.imread(Reader.addFromJar("times.png","times.png"),0);
 			//Mat imgTemplate = Imgcodecs.imread(Reader.addFromJar("template3.png","template3.png"),0);
 			Imgproc.adaptiveThreshold(imgTemplate, imgTemplate, 255, Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_BINARY, 201, 20);
@@ -385,71 +376,10 @@ public class LerCartao{
 				if(ind>=0 && ind<11) {
 					LerCartao.matLetras[ind]=imgTemplate.submat(rect);
 				}
-				//Core.bitwise_xor(src, threshold, dst);
-				//Core.countNonZero(matBranca)
-				//Point p1 = new Point(rect.x,rect.y);
-				//Point p2 = new Point(rect.x+rect.width,rect.y+rect.height);
-				//Imgproc.rectangle(LerCartao.imgTemplate, p1, p2, new Scalar(128));
 			}
-			//System.out.println(matLetras.length);
-			//Imgproc.drawContours(LerCartao.imgTemplate, contoursTmp, -1, new Scalar(0), 1) ;
-			//Imgcodecs.imwrite("/home/samuelkato/Desktop/img diss/template.bmp", matLetras[1]);
-			
-			//LerCartao.imgTemplate = Imgcodecs.imread("C:/Users/Samuel Kato/eclipse-workspace/answerCardReader/images/template3.png",0);
-			//System.out.println(getClass().getResource("template3.png").getPath());
-			//LerCartao.imgTemplate = Imgcodecs.imread("/home/samuelkato/template3.png",0);
-			
-			//LerCartao.imgTemplate = Imgcodecs.imread("/home/samuelkato/template-times.png",0);
 		}
 		int w = this.bw.width();
 		int h = this.bw.height();
-		/*Map<String, int[]> mTemplate = new HashMap<String,int[]>();
-		mTemplate.put("0", new int[]{60,43});//colocar min e max width height? area?
-		mTemplate.put("1", new int[]{160, 43});//area prop
-		mTemplate.put("2", new int[]{247, 43});
-		mTemplate.put("3", new int[]{342, 43});
-		mTemplate.put("4", new int[]{431, 43});
-		mTemplate.put("5", new int[]{526, 43});
-		mTemplate.put("6", new int[]{620, 43});'
-		mTemplate.put("7", new int[]{714, 43});
-		mTemplate.put("8", new int[]{807, 43});
-		mTemplate.put("9", new int[]{900, 43});
-		mTemplate.put("/", new int[]{990, 43});
-		int heightTemplate = 54;
-		*/
-		
-		/*
-		//template3
-		Map<String, int[]> mTemplate = new HashMap<String,int[]>();
-		mTemplate.put("0", new int[]{64,2});//colocar min e max width height? area?
-		mTemplate.put("1", new int[]{159, 2});//area prop
-		mTemplate.put("2", new int[]{249, 2});
-		mTemplate.put("3", new int[]{342, 2});
-		mTemplate.put("4", new int[]{433, 2});
-		mTemplate.put("5", new int[]{528, 2});
-		mTemplate.put("6", new int[]{619, 2});
-		mTemplate.put("7", new int[]{714, 2});
-		mTemplate.put("8", new int[]{805, 2});
-		mTemplate.put("9", new int[]{899, 2});
-		mTemplate.put("/", new int[]{988, 2});
-		*/
-		
-		/*
-		//times
-		Map<String, int[]> mTemplate = new HashMap<String,int[]>();
-		mTemplate.put("0", new int[]{94,  8});//colocar min e max width height? area?
-		mTemplate.put("1", new int[]{200, 8});//area prop
-		mTemplate.put("2", new int[]{293, 8});
-		mTemplate.put("3", new int[]{394, 8});
-		mTemplate.put("4", new int[]{492, 8});
-		mTemplate.put("5", new int[]{595, 8});
-		mTemplate.put("6", new int[]{694, 8});
-		mTemplate.put("7", new int[]{794, 8});
-		mTemplate.put("8", new int[]{896, 8});
-		mTemplate.put("9", new int[]{994, 8});
-		mTemplate.put("/", new int[]{1092, 8});
-		*/
-//		int heightTemplate = 46;
 		List<MatOfPoint> contoursLetras = new ArrayList<>();
 		Map<MatOfPoint, String> mapLetras = new HashMap<>();
 //		int iTmp = 0;
@@ -506,7 +436,6 @@ public class LerCartao{
 			if(maxVal > 80) {
 				contoursLetras.add(cnt);
 				mapLetras.put(cnt,aLetras[iEsco]);
-				
 				/*Point p1 = new Point(rect.x,rect.y);
 				Point p2 = new Point(rect.x+rect.width,rect.y+rect.height);
 				Imgproc.rectangle(matBranca, p1, p2, new Scalar(0));*/
@@ -538,7 +467,6 @@ public class LerCartao{
 		List<Linha> linhas = Linha.gerarLinhas(contoursLetras);//pontos colineares
 		for(Linha linha : linhas) {
 			String strLinha = linha.getTexto(mapLetras);
-			//System.out.println(strLinha);
 			String[] aLinha = strLinha.split("/");
 			if(strLinha.matches("\\d+\\/\\d+") && Integer.parseInt(aLinha[0]) <= Integer.parseInt(aLinha[1])) {
 				//verificar se letras sao equidistantes
