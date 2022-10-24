@@ -24,7 +24,7 @@ public class ImageProcessing {
 
 	public ImageProcessing(File fileEntry, boolean rodar) throws IOException {
 		this.path = fileEntry.getPath();
-		this.fileName = this.path.replaceAll(".+(\\/|\\\\)","").replace("\"", "\\\"").replace("\\", "\\\\").replaceAll("\\..+$", "");
+		this.fileName = this.path.replaceAll(".+(\\/|\\\\)","").replace("\"", "\\\"").replace("\\", "\\\\").replaceAll("\\.[^\\.]+?$", "");
 		this.imgOriginal = ImageIO.read(fileEntry);
 		this.imgOriginal.getType();//soh pra levantar uma Exception e nao processa o arquivo
 		this.img = criarImagemRedimensionada(this.imgOriginal, 1000);

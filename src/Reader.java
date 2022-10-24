@@ -3,6 +3,7 @@
  * melhoria na deteccao de cores
  * 
  */
+//package br.com.novometodo.reader
 
 import java.awt.BorderLayout;
 import java.awt.Cursor;
