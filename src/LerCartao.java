@@ -41,6 +41,7 @@ public class LerCartao{
 	ImageProcessing clImg;
 	//private static Mat imgTemplate=null;
 	private Boolean debug_;
+	private Boolean blur_;
 	private Mat bw;
 	private int tipo=2;//1=>teste 2=>diss
 	private double prop;
@@ -51,8 +52,9 @@ public class LerCartao{
 	/*public LerCartao(ImageProcessing clImg, ZipOutputStream zipSaida) {
 		return;
 	}*/
-	public LerCartao(ImageProcessing clImg, Pool pool, Boolean debug_){
+	public LerCartao(ImageProcessing clImg, Pool pool, Boolean debug_, Boolean blur_){
 		this.debug_ = debug_;
+		this.blur_ = blur_;
 		this.clImg=clImg;
 		
 		BufferedImage file = clImg.imgOriginal;
@@ -63,7 +65,7 @@ public class LerCartao{
 			return;
 		}
 		
-
+		
 		
 		
 
@@ -200,6 +202,12 @@ public class LerCartao{
 		}else {
 			Imgproc.cvtColor(mat, gray, Imgproc.COLOR_RGB2GRAY);
 		}
+		
+		if(this.blur_) {
+			//System.out.println("bluuuur");
+			Imgproc.GaussianBlur(gray, gray, new Size(3, 3), 0, 0);
+			//Imgcodecs.imwrite(this.clImg.path.replaceAll("[^\\/]+$","")+"gray.bmp", gray);
+		}
 		/*
 		Mat qrPoints = new Mat();
 		QRCodeDetector qrDetect = new QRCodeDetector();
@@ -222,6 +230,7 @@ public class LerCartao{
 		//Mat kernel = Mat.eye(3, 3, CvType.CV_8UC1);
 		//kernel.put(0 ,0, 1,1,1, 1, 1, 1, 1,1,1 );
 		Mat mDil = this.bw.clone();
+		Imgcodecs.imwrite(this.clImg.path.replaceAll("[^\\/]+$","")+"teste/dill.bmp", mDil);
 		Imgproc.dilate(mDil, mDil, kernel);
 		Imgproc.erode(mDil, mDil, kernel);
 		Imgproc.erode(mDil, mDil, kernel);
@@ -231,7 +240,9 @@ public class LerCartao{
 		Imgproc.dilate(mDil, mDil, kernel);
 		Imgproc.dilate(mDil, mDil, kernel);
 		//Imgproc.erode(mDil, mDil, kernel);
-		//Imgcodecs.imwrite("/home/samuelkato/Desktop/img diss/dil.bmp", mDil);
+		if(this.debug_) {
+			Imgcodecs.imwrite(this.clImg.path.replaceAll("[^\\/]+$","")+"dil.bmp", mDil);
+		}
 		List<MatOfPoint> cntsQr = new ArrayList<>();
 		Imgproc.findContours(mDil, cntsQr, new Mat(), Imgproc.RETR_TREE,Imgproc.CHAIN_APPROX_SIMPLE);
 		Mat matBranca = new Mat(mat.size(),CvType.CV_8U,new Scalar(255));
@@ -659,7 +670,7 @@ public class LerCartao{
 		}else if(p1 == null && p2 != null && p3 != null && p4 != null){//girar 90 anti-horario
 			throw new ErrAng(-90);
 		}else{
-			throw new Exception("Erro: 3 pontos nao encontrados (posicao)\n"+pontosRef);
+			throw new Exception("Erro: 3 pontos nao encontrados (posicao)");
 		}
 		
 		return ret;

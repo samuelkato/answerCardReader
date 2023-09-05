@@ -40,6 +40,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 	public JButton startButton;
 	public JTextArea taskOutput;
 	public JCheckBox chkDebug;
+	public JCheckBox chkBlur;
 	private ProcessaFolder task;
    
 	public static void main(String[] args) {
@@ -115,10 +116,14 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 		chkDebug = new JCheckBox("Debug");
 		chkDebug.setToolTipText("Criar Imagens de Diagnóstico");
 		
+		chkBlur = new JCheckBox("Blur");
+		chkBlur.setToolTipText("Borrar Imagens");
+		
 		JPanel panel = new JPanel();
 		panel.add(startButton);
 		panel.add(progressBar);
 		panel.add(chkDebug);
+		panel.add(chkBlur);
  
 		add(panel, BorderLayout.PAGE_START);
 		add(new JScrollPane(taskOutput), BorderLayout.CENTER);
@@ -136,7 +141,7 @@ public class Reader  extends JPanel implements ActionListener, PropertyChangeLis
 				setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 				//Instances of javax.swing.SwingWorker are not reusuable, so
 				//we create new instances as needed.
-				task = new ProcessaFolder(chooser.getSelectedFile(), this, this.chkDebug.isSelected());
+				task = new ProcessaFolder(chooser.getSelectedFile(), this, this.chkDebug.isSelected(), this.chkBlur.isSelected());
 				task.addPropertyChangeListener(this);
 				task.execute();
 			}
